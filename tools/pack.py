@@ -1,4 +1,4 @@
-"""Verify canonical DeepBideTelemetry source and reproduce its pre-release mod ZIP.
+"""Verify canonical DeepBideTelemetry source and reproduce its stable mod ZIP.
 
 Python 3.11+ standard library; creates only an explicitly requested new ZIP.
 No game access, dependency installation, network, or publication.
@@ -19,7 +19,8 @@ RUNTIME_NAMES = ("init.lua", "config.example.json", "native_candidate_25.lua",
                  "native_equipment_25.lua", "native_stash_25.lua")
 COMMON_NAMES = ("README.md", "LICENSE", "PROTOCOL.md", "THIRD_PARTY.md", "CHANGELOG.md")
 SOURCE_EXTRAS = (".gitignore", ".gitattributes", "examples/receiver.py",
-                 "examples/test_receiver.py", "tools/pack.py")
+                 "examples/test_receiver.py", "tools/pack.py",
+                 "examples/expanded_contract.py", "examples/expanded_reader.py", "examples/test_expanded_reader.py")
 MANIFEST = "release-manifest.json"
 
 
@@ -54,15 +55,15 @@ def manifest(files):
         raise ValueError("PACKAGE_ALLOWLIST_MISMATCH")
     hashes = {n: sha(canonical(raw)) for n, raw in sorted(files.items())}
     runtime = {n: hashes[prefix+n] for n in RUNTIME_NAMES}
-    return {"product": "DeepBide-Telemetry", "version": "0.1.0-rc.1",
-            "scope": "PUBLIC_PRERELEASE_BASELINE_SCOPED", "license": "MIT",
+    return {"product": "DeepBide-Telemetry", "version": "1.0.0",
+            "scope": "PUBLIC_STABLE_SCOPED", "license": "MIT",
             "license_scope": "ORIGINAL_DEEPBIDETELEMETRY_CODE_AND_DOCUMENTATION",
             "provenance_review": "SCOPED_SOURCE_HISTORY_REVIEW",
-            "qualification": "SHORT_ATTENDED_BASELINE_ONLY",
-            "physical_revision": "BASELINE_LUA_BYTE_IDENTICAL_2026_11_26",
-            "tested_lua": {n: h for n,h in runtime.items() if n.endswith(".lua")},
-            "dependency_version": "DeepBide-RedSocket 0.5.2-rc.3",
-            "dependency_mod_sha256": "e788af8a3d440b50df6551bb0d777d77268a91c5f0d105623ab42da08d35d297",
+            "qualification": "BASELINE_AND_EXPANDED_PHYSICAL_SCOPED_2026_11_26",
+            "physical_revision": "BASELINE_EXPANDED_LUA_BYTE_IDENTICAL_2026_11_26",
+            "frozen_lua": {n: h for n,h in runtime.items() if n.endswith(".lua")},
+            "dependency_version": "DeepBide-RedSocket 0.5.2",
+            "dependency_mod_sha256": "3ff795b8ab8e0e3d56912955349c07a47e7112e056be6128f22e8a15c4e4fbb3",
             "source_format": "UTF8_LF_CANONICAL_LUA", "zip_creator_system": 3,
             "runtime_tree_sha256": sha(json_bytes(runtime)), "files": hashes}
 

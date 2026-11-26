@@ -1,5 +1,16 @@
 # DeepBide-Telemetry changelog
 
+## v1.0.0 — 2026-11-26 (stable)
+
+- Official baseline and expanded profiles, with optional Journal and live-target contracts.
+- Exact four Lua files and disabled template from v0.1.0-rc.1, no runtime changes.
+- Standalone expanded reader, validator, replay and tests; no private database or assistant dependency.
+- Attended physical validation of expanded + optional contracts, controlled EOF,
+  reload, progression, stash, reference-gap accounting and ordinary shutdown.
+- Requires the stable 0.5.2 RedSocket distribution (unchanged RC3 runtime).
+- Earlier A/B evidence retained, no FPS claim for the final revision. See README
+  for scoped evidence and limits. The historical pre-release entry follows.
+
 ## v0.1.0-rc.1 — 2026-11-26
 
 First standalone pre-release candidate for Cyberpunk 2077 2.5.

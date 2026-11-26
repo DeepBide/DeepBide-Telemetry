@@ -12,12 +12,12 @@ legal opinion or clearance of rights held by other parties.
 | [Cyber Engine Tweaks](https://github.com/maximegmd/CyberEngineTweaks/releases/tag/v1.38.1) | 1.38.1; Lua/RTTI/observer APIs | MIT, yamashi and contributors; official ZIP bin/x64/LICENSE and ThirdParty_LICENSES; its separately installed JSON module includes rxi's MIT notice |
 | [RED4ext](https://github.com/WopsS/RED4ext/releases/tag/v1.31.1) | 1.31.1; native plugin loader | MIT, Octavian Dima and contributors; official ZIP red4ext/LICENSE.txt and THIRD_PARTY_LICENSES.txt |
 | [redscript](https://github.com/jac3km4/redscript/releases/tag/v0.5.32) | 0.5.32; transport script toolchain | [MIT, jac3km4](https://github.com/jac3km4/redscript/blob/v0.5.32/LICENSE) |
-| [DeepBide-RedSocket](https://github.com/DeepBide/DeepBide-RedSocket/releases/tag/v0.5.2-rc.3) | 0.5.2-rc.3; exact CET wrapper API and native transport | [MIT, Louis Poirier; DeepBide modifications](https://github.com/DeepBide/DeepBide-RedSocket/blob/v0.5.2-rc.3/LICENSE); original upstream RedSocket 0.5.0, commit 055420a7317cb6e318251ed168eefad10fb1ea5b |
+| [DeepBide-RedSocket](https://github.com/DeepBide/DeepBide-RedSocket/releases/tag/v0.5.2) | 0.5.2 (0.5.2-rc.3 runtime build); exact CET wrapper API and native transport | [MIT, Louis Poirier; DeepBide modifications](https://github.com/DeepBide/DeepBide-RedSocket/blob/v0.5.2/LICENSE); original upstream RedSocket 0.5.0, commit 055420a7317cb6e318251ed168eefad10fb1ea5b |
 | [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) | compatible v14 x64 runtime for RedSocket; separately installed | Microsoft terms, not relicensed or bundled |
 | [Python](https://www.python.org/) | 3.11+ (3.11.9 used for Windows packaging/tests); example and packaging only | [PSF License](https://docs.python.org/3.11/license.html) |
 
 RedSocket's pinned transitive build inputs and full original notices are
-documented in its exact [THIRD_PARTY.md](https://github.com/DeepBide/DeepBide-RedSocket/blob/v0.5.2-rc.3/THIRD_PARTY.md):
+documented in its exact [THIRD_PARTY.md](https://github.com/DeepBide/DeepBide-RedSocket/blob/v0.5.2/THIRD_PARTY.md):
 RED4ext.SDK 0f5eba42a4cf3a1161ad3de0b4ed6f1901ec169e (MIT, including
 its D3D12 Memory Allocator notice); RedLib
 3fd71fee06834e748ea593166fb179c9c1b9191b (MIT, including nameof);
@@ -62,3 +62,5 @@ for the game and its ecosystem. The game and all third-party material
 remain the property of their respective rights holders. This independent
 fan-made tool does not claim affiliation, endorsement or ownership
 of those projects.
+
+The independent expanded reader derives from our original native contract, replay, stash and reference-key code; no external cache, game asset, additional third-party dependency or external code is included.

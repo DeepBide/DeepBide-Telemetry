@@ -1,6 +1,6 @@
 # DeepBide-Telemetry wire guide
 
-Pre-release v0.1.0-rc.1 for Cyberpunk 2077 2.5. The game producer
+Stable v1.0.0 for Cyberpunk 2077 2.5. The game producer
 does not depend on a particular consumer, assistant, database or HUD. No game
 version, dependency binary or producer identity is authenticated by this
 protocol alone. The example is for a local developer, not an approved deployment.
@@ -116,9 +116,9 @@ The example retains a loading boundary until an explicit nonloading menu
 witness and requires a menu witness before world data. It is not an advice
 engine or a complete product admission implementation.
 
-## Expanded profile: experimental local diagnostic stream (not TCP)
+## Expanded profile: supported local observation stream (not TCP)
 
-Not physically qualified for this release pairing. Use baseline for the tested scope.
+Both profiles were physically tested on the documented runtime pairing. Expanded is opt-in; see README for scope, evidence and configuration.
 
 With native_candidate_25 enabled and native_candidate_profile=expanded, the
 producer writes separate CET log records prefixed
@@ -141,7 +141,7 @@ A new opening can rearm diagnostics but cannot erase prior missing evidence.
 After rotation, do not certify bytes already present as a new live session.
 A registration marker is not process identity.
 
-Families and kind names (experimental, read the accompanying modules for
+Families and kind names (read the accompanying modules for
 the exact data fields and native source names):
 
 - SESSION, SOURCE_GAP and STATIC_RECORD_REFERENCES.
@@ -168,9 +168,13 @@ headers and ordered contiguous chunks describe one scoped snapshot, not all
 storage; require final chunk and count agreement. Progression complete covers
 perks; attributes_complete is separate, and points/skills have independent
 availability. Static record references may be unresolved; no static value
-certifies dynamic instance properties or mod overrides. The public example
-does not parse these experimental log rows or include the internal replay/cache.
-No fully validated public typed semantic guarantee is implied for this stream.
+certifies dynamic instance properties or mod overrides. The base TCP example does not parse these rows. The included expanded reader
+validates and replays bounded, chronological JSONL or CET log captures,
+reassembles stash snapshots and reports gaps, offers and interrupted snapshots.
+It does not include a static metadata catalog or prove live process identity.
+A CLOSED_NO_RECORDED_LOSS report is scoped to stream closure and reported loss;
+inspect interrupted stash counts and field availability separately. No exhaustive
+semantic guarantee is implied for every field or gameplay state.
 
 ## Local development example
 
