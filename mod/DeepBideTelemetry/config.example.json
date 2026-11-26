@@ -1,0 +1,18 @@
+{
+  "game_id": "cyberpunk-2077",
+  "game_version": "2.5",
+  "heartbeat_interval_seconds": 2.0,
+  "host": "127.0.0.1",
+  "inventory_delta_poll_seconds": 2.0,
+  "journal_verification_0_1": false,
+  "native_candidate_25": false,
+  "native_candidate_profile": "baseline",
+  "poll_interval_seconds": 0.5,
+  "port": 20770,
+  "reconnect_interval_seconds": 5.0,
+  "run_id": "replace-with-a-logical-run-uuid",
+  "schema_version": "0.03",
+  "target_live_contract_0_1": false,
+  "target_renewal_seconds": null,
+  "user_id": "replace-with-a-persistent-local-uuid"
+}

@@ -1,0 +1,38 @@
+{
+  "dependency_mod_sha256": "e788af8a3d440b50df6551bb0d777d77268a91c5f0d105623ab42da08d35d297",
+  "dependency_version": "DeepBide-RedSocket 0.5.2-rc.3",
+  "files": {
+    ".gitattributes": "1f188a384f3a7d8e293f83c43a896957fff3e9ff9fc3f752e6d78825f92f65ec",
+    ".gitignore": "3ecff643cc3a0fbb283b781db92fc85ad2c045a8f1857b519af80b23781cd594",
+    "CHANGELOG.md": "6a030dc4617feff6bc858c3f88f1857dce423b3ea0ed3e81d5809cd57c5249e9",
+    "LICENSE": "ff6ff85667b3e057a53c6ecc395e77be8df74dc61f1cb14400089afa7f68faa8",
+    "PROTOCOL.md": "311ff64037a6e1ee3703c8aacba2e19f3f7680bbbda64fbf1c2268b0616d6005",
+    "README.md": "7047d250d72ce482bb1e91be6ced6edc37023ac40be13c2814f3a8c24a4fcfd4",
+    "THIRD_PARTY.md": "6f6f26b9cb2746099f2eb4773b77605f2526f1293bf8378c975f21d48d289f0b",
+    "examples/receiver.py": "6b55afc532f383f146607de3f07cbbbe2640c4df06f8a7e8dfaf28c6d2d895d3",
+    "examples/test_receiver.py": "0f456dd5e39a240c2d7e61fa8f22dd7d0bad1da5ea3dd363e190f09679d6cecc",
+    "mod/DeepBideTelemetry/config.example.json": "cecf6ea843d044c3c0c51e86e05c7aca185d7b3c4fb31801a924eed49e765080",
+    "mod/DeepBideTelemetry/init.lua": "cf9fcc37e3052eeb734444f000380d637c0cc3c3a4a506ca2852eab9cec1f242",
+    "mod/DeepBideTelemetry/native_candidate_25.lua": "e1035aa677bec3879c8e31d8ffa0630b4b679a95db13ed7a37bffef374945e52",
+    "mod/DeepBideTelemetry/native_equipment_25.lua": "7c2583fe9bfd6fa6de0b8acdf417ff1106e66eaf786d370f17bf1955b7f51784",
+    "mod/DeepBideTelemetry/native_stash_25.lua": "c2fe16d07e1b5a95a52d60391c0ecf1b79cb740147ac224b8fb5fe96a5b46e0e",
+    "tools/pack.py": "00b6280c59829cd165d6ad5040b299c77a134bda9aa1f6475316c87f7a503789"
+  },
+  "license": "MIT",
+  "license_scope": "ORIGINAL_DEEPBIDETELEMETRY_CODE_AND_DOCUMENTATION",
+  "physical_revision": "BASELINE_LUA_BYTE_IDENTICAL_2026_11_26",
+  "product": "DeepBide-Telemetry",
+  "provenance_review": "SCOPED_SOURCE_HISTORY_REVIEW",
+  "qualification": "SHORT_ATTENDED_BASELINE_ONLY",
+  "runtime_tree_sha256": "93d1e154dc4e8f6b91c1786833138b0306ee3be5fb35a2ab3520d37dc16d350f",
+  "scope": "PUBLIC_PRERELEASE_BASELINE_SCOPED",
+  "source_format": "UTF8_LF_CANONICAL_LUA",
+  "tested_lua": {
+    "init.lua": "cf9fcc37e3052eeb734444f000380d637c0cc3c3a4a506ca2852eab9cec1f242",
+    "native_candidate_25.lua": "e1035aa677bec3879c8e31d8ffa0630b4b679a95db13ed7a37bffef374945e52",
+    "native_equipment_25.lua": "7c2583fe9bfd6fa6de0b8acdf417ff1106e66eaf786d370f17bf1955b7f51784",
+    "native_stash_25.lua": "c2fe16d07e1b5a95a52d60391c0ecf1b79cb740147ac224b8fb5fe96a5b46e0e"
+  },
+  "version": "0.1.0-rc.1",
+  "zip_creator_system": 3
+}

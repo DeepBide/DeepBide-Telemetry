@@ -1,0 +1,11 @@
+# Never commit local runtime data.
+config.json
+*.log
+*.jsonl
+*.sqlite
+*.sqlite3
+*.db
+*.sav
+*.dat
+*.zip
+__pycache__/
