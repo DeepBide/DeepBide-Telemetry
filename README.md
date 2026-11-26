@@ -114,6 +114,28 @@ updater or game-control command interface.
 
 ## Evidence and limitations
 
+### Development and validation history
+
+This release is the culmination of months of iterative development and
+validation, not the result of a single short gameplay test. Throughout
+development we performed hundreds of automated test-case executions and
+regression checks, including repeated runs against successive revisions,
+as well as hands-on in-game investigations, integration tests, controlled
+connection failures, independent source reviews, and corrections followed
+by targeted retesting. For example, selected earlier regression runs
+recorded 144/144, 101/101 and 135/135 passing checks. These counts describe
+test executions, not a count of unique test cases or gameplay sessions.
+
+Earlier in-game investigation covered selected scenarios in 20 families
+of telemetry observations, with two further advanced investigations closed
+within their defined scope. The final release qualification runs described
+below are representative checks of the exact shipped runtime files,
+building on that longer body of evidence. Earlier tests covered the
+revisions and scenarios exercised at the time; they do not imply universal
+coverage of every game state.
+
+### Final release qualification
+
 On 26 November 2026, the exact four Lua files in this release were tested
 in a short, attended real gameplay session with the above transport/runtime
 and enabled baseline configuration (local trial UUIDs). A receiver using
@@ -167,6 +189,10 @@ exact weapon-wall binding or universal consumer/advice guarantee.
 The source ZIP contains canonical editable Lua, the Python reference
 receiver, expanded reader, tests, documentation and a standard-library packer. The source and
 mod manifests pin file hashes, the runtime tree and the four Lua file hashes.
+This repository's main-branch README may receive documentation-only updates
+after a release. For exact verification and reproduction, use the canonical
+source ZIP from the [v1.0.0 release](https://github.com/DeepBide/DeepBide-Telemetry/releases/tag/v1.0.0)
+or the frozen v1.0.0 tag, not a later main-branch checkout.
 From the extracted source root:
 
 - `python -B examples/test_receiver.py` — base synthetic tests.
@@ -202,4 +228,15 @@ CD Projekt Red and the wider Cyberpunk modding community. Their work made
 this independent project possible. No affiliation or endorsement is implied.
 
 Development and documentation involved substantial generative AI assistance
-under human-led design, review and testing.
+under human-led design, review and testing. This mod is the result of months
+of sustained human effort, careful engineering and close supervision
+throughout the development process. Its maintainer defined the requirements
+and scope, guided the technical decisions, reviewed the work at each stage,
+carried out hands-on in-game tests, assessed the evidence, and made the final
+acceptance decisions.
+
+AI was a valuable collaborator in implementation, analysis and documentation,
+not a substitute for that human responsibility. DeepBide-Telemetry was not
+created from a single prompt: it grew through repeated investigation,
+iteration, correction and verification until the result met the intended
+requirements within the documented scope.
