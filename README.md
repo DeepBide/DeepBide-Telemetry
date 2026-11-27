@@ -1,6 +1,6 @@
 # DeepBide-Telemetry for Cyberpunk 2077
 
-**v1.0.0 stable · MIT · Windows x64**
+**v1.1.0 · MIT · Windows x64**
 
 Read-only, opt-in game-state observations for local applications. Build your
 own tools, companion applications, experiments or integrations using a
@@ -23,8 +23,10 @@ quickhacks, dialogues, interactions, Journal, map, shards, Relic, tarot,
 status effects, fast travel, braindance, equipment, stash, police,
 proximity, progression and vehicle witnesses. These rows are a separate
 local CET log stream; they are not additional TCP observations. Optional
-Journal and live-target TCP contracts are also supported. See PROTOCOL.md
-for the scoped meaning of each observation and explicit availability.
+Journal and live-target TCP contracts are also supported. Version 1.1.0 adds
+an opt-in current-context renewal contract for consumers that need fresh
+unchanged gameplay readings. See PROTOCOL.md for scoped meaning, explicit
+availability and freshness rules.
 This mod does not play the game, write saves, give advice or display a HUD.
 
 ## Requirements — exact tested combination
@@ -71,7 +73,7 @@ A matching wrapper version string is not proof of DLL identity.
    valid canonical lowercase UUIDs; choose a persistent local user label and
    a logical run label (PowerShell: `[guid]::NewGuid().ToString()`, twice).
    These are local correlation IDs, not credentials. Keep host 127.0.0.1,
-   native_candidate_profile "baseline" and both optional flags false for the
+   native_candidate_profile "baseline" and optional flags false for the
     baseline profile. For the advanced profile, set native_candidate_profile
     to "expanded". The final attended advanced test also set
     journal_verification_0_1 and target_live_contract_0_1 to true and
@@ -91,6 +93,43 @@ the active configuration). To uninstall, close the game and launcher,
 stop only your own receiver, remove only the DeepBideTelemetry directory,
 and restore your prior backups if needed. Remove RedSocket separately only
 if no other installed mod needs it, following its own instructions.
+
+### Opt-in current-context renewal (v1.1.0)
+
+For a consumer that expires unchanged context quickly, configure the following
+in the active config.json, keeping the required local identity, game/schema,
+host/port and other settings from the template:
+
+```json
+{
+  "native_candidate_25": true,
+  "native_candidate_profile": "expanded",
+  "poll_interval_seconds": 0.5,
+  "context_renewal_0_1": true,
+  "journal_verification_0_1": false,
+  "target_live_contract_0_1": false
+}
+```
+
+This is a fragment, not a complete configuration file. The new boolean is
+false by default; omission is equivalent to false. The enabled option
+requires expanded and a 0.5-second poll (omitting the poll uses 0.5).
+Invalid combinations are rejected before socket creation or registration.
+Keep Journal and target-live options at your consumer's supported settings;
+the existing Journal verification contract can also coexist with renewal.
+
+During positively witnessed gameplay, the option renews MENU_STATE,
+COMBAT_STATE, ACTIVE_QUEST and ACTIVE_OBJECTIVE from genuine current reads,
+even when the values are unchanged, at a nominal 0.5-second cadence. It
+does not relabel cached values, change schema 0.03, expand a consumer's TTL,
+or claim a maximum delivery interval. At most one renewal per type per
+eligible poll (nominally up to eight observations/s across these four).
+Normal changes, other observations and heartbeat retain their own behavior.
+No catch-up burst after a stall. Unknown or failed reads are not refreshed;
+ordinary menus, loading and disconnected epochs do not receive the new
+periodic gameplay renewal. Combat=true is still a real observation, not
+permission to intervene. See [PROTOCOL.md](PROTOCOL.md#opt-in-current-context-renewal-01)
+for the safety boundaries and receiver responsibilities.
 
 ## Privacy and security
 
@@ -129,14 +168,14 @@ test executions, not a count of unique test cases or gameplay sessions.
 Earlier in-game investigation covered selected scenarios in 20 families
 of telemetry observations, with two further advanced investigations closed
 within their defined scope. The final release qualification runs described
-below are representative checks of the exact shipped runtime files,
+below are representative checks of the exact v1.0.0 runtime files,
 building on that longer body of evidence. Earlier tests covered the
 revisions and scenarios exercised at the time; they do not imply universal
 coverage of every game state.
 
-### Final release qualification
+### v1.0.0 final release qualification (historical evidence)
 
-On 26 November 2026, the exact four Lua files in this release were tested
+On 26 November 2026, the exact four Lua files in v1.0.0 were tested
 in a short, attended real gameplay session with the above transport/runtime
 and enabled baseline configuration (local trial UUIDs). A receiver using
 the included reference consumer accepted 673 frames: 518 observations and
@@ -184,6 +223,35 @@ is made. Other game versions, arbitrary dependency combinations and
 non-Windows systems are outside the tested scope. No acquisition causality,
 exact weapon-wall binding or universal consumer/advice guarantee.
 
+### v1.1.0 focused renewal validation
+
+Version 1.1.0 retains the three exact v1.0.0 native reader modules, the
+reference readers, the wire schema and RedSocket dependency. Only init.lua
+and the disabled configuration template change at runtime. The renewal
+algorithm reuses earlier, scoped current-read work; the new option and
+validation make that behavior explicitly opt-in for public consumers.
+
+Ten focused synthetic LuaJIT tests against the exact candidate Lua and
+published CET wrappers passed: six retained renewal cases and four additional
+checks for configuration refusal, unchanged behavior with the option off
+or omitted, genuine native reads and the optional Journal contract.
+Cases include unchanged samples, delayed updates without bursts, failed
+reads, menus, combat, loading, new native generations and TCP reconnect.
+A focused existing receiver crosscheck accepted 219 distinct observations
+across two synthetic TCP epochs (five cases including the heartbeat control,
+with and without synthetic peer witnesses). The exact public expanded reader
+also accepted 77 native rows, three opened and closed generations, no reported
+loss or rejection. These are offline/synthetic results, not a new native
+gameplay, performance, or end-to-end consumer acceptance claim.
+
+Earlier v1.0.0 physical and historical performance evidence is retained
+for the unchanged components and prior tested revisions; v1.1.0 does not
+claim that its changed init.lua has been physically qualified. Actual
+renewal intervals and frame-time in a real session remain unmeasured.
+Consumers must enforce their own freshness and lifecycle gates; if their
+budget is exceeded they must fail closed, not extend the budget because
+renewal is enabled. No new game version or dependency support is claimed.
+
 ## Verify and reproduce
 
 The source ZIP contains canonical editable Lua, the Python reference
@@ -191,8 +259,9 @@ receiver, expanded reader, tests, documentation and a standard-library packer. T
 mod manifests pin file hashes, the runtime tree and the four Lua file hashes.
 This repository's main-branch README may receive documentation-only updates
 after a release. For exact verification and reproduction, use the canonical
-source ZIP from the [v1.0.0 release](https://github.com/DeepBide/DeepBide-Telemetry/releases/tag/v1.0.0)
-or the frozen v1.0.0 tag, not a later main-branch checkout.
+source ZIP from the matching release or its frozen version tag, not a later
+main-branch checkout. Repository-only branding assets are not part of the
+canonical source or mod manifest.
 From the extracted source root:
 
 - `python -B examples/test_receiver.py` — base synthetic tests.

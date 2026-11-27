@@ -55,12 +55,15 @@ def manifest(files):
         raise ValueError("PACKAGE_ALLOWLIST_MISMATCH")
     hashes = {n: sha(canonical(raw)) for n, raw in sorted(files.items())}
     runtime = {n: hashes[prefix+n] for n in RUNTIME_NAMES}
-    return {"product": "DeepBide-Telemetry", "version": "1.0.0",
+    return {"product": "DeepBide-Telemetry", "version": "1.1.0",
             "scope": "PUBLIC_STABLE_SCOPED", "license": "MIT",
             "license_scope": "ORIGINAL_DEEPBIDETELEMETRY_CODE_AND_DOCUMENTATION",
             "provenance_review": "SCOPED_SOURCE_HISTORY_REVIEW",
-            "qualification": "BASELINE_AND_EXPANDED_PHYSICAL_SCOPED_2026_11_26",
-            "physical_revision": "BASELINE_EXPANDED_LUA_BYTE_IDENTICAL_2026_11_26",
+            "qualification": "V1_0_0_PHYSICAL_REUSED_CONTEXT_RENEWAL_OFFLINE_PASS_SCOPED",
+            "physical_revision": "V1_0_0_2026_11_26_INIT_CHANGED_NATIVE_MODULES_IDENTICAL",
+            "context_renewal_contract": {"version": "0.1", "config_key": "context_renewal_0_1",
+                                         "default": False, "profile": "expanded",
+                                         "nominal_poll_seconds": 0.5},
             "frozen_lua": {n: h for n,h in runtime.items() if n.endswith(".lua")},
             "dependency_version": "DeepBide-RedSocket 0.5.2",
             "dependency_mod_sha256": "3ff795b8ab8e0e3d56912955349c07a47e7112e056be6128f22e8a15c4e4fbb3",
@@ -74,7 +77,7 @@ def archive(files):
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_STORED) as z:
         for name, raw in sorted(all_files.items()):
-            entry = zipfile.ZipInfo(name, (2026, 11, 26, 0, 0, 0))
+            entry = zipfile.ZipInfo(name, (2026, 11, 27, 0, 0, 0))
             entry.create_system = 3
             entry.external_attr = 0o100644 << 16
             z.writestr(entry, raw)

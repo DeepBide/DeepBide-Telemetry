@@ -43,6 +43,11 @@ local loadingRecoveryTracker = false
 local loadingRecoverySamples = 0
 local loadingProgressUnknown = false
 local nativeCandidate25 = nil
+-- Opt-in renewal of four genuine current reads; never refresh cached facts.
+local candidateBaseRenewDue = false
+local candidateBaseWasGameplay = false
+local candidateBaseElapsed = 0.0
+local candidateBaseTypes = {MENU_STATE=true, COMBAT_STATE=true, ACTIVE_QUEST=true, ACTIVE_OBJECTIVE=true}
 local journalElapsed = 0.0
 local journalSeq = { ACTIVE_OBJECTIVE = 0, ACTIVE_QUEST = 0 }
 local journalBaseline = { ACTIVE_OBJECTIVE = true, ACTIVE_QUEST = true }
@@ -138,10 +143,15 @@ local function loadConfig()
         error("invalid seconds config field: " .. key)
       end
     end
-    for _, key in ipairs({"journal_verification_0_1", "target_live_contract_0_1"}) do
+    for _, key in ipairs({"journal_verification_0_1", "target_live_contract_0_1", "context_renewal_0_1"}) do
       if decoded[key] ~= nil and type(decoded[key]) ~= "boolean" then
         error("invalid boolean config field: " .. key)
       end
+    end
+  end
+  if decoded.native_candidate_25 == true and decoded.context_renewal_0_1 == true then
+    if decoded.native_candidate_profile ~= "expanded" or (decoded.poll_interval_seconds or 0.5) ~= 0.5 then
+      error("context renewal requires expanded profile and 0.5 second poll interval")
     end
   end
   if decoded.journal_verification_0_1 == true and decoded.schema_version ~= "0.03" then
@@ -251,7 +261,8 @@ local function sendObservation(observationType, payload, method, deduplicate, st
     return false
   end
   local shouldDeduplicate = deduplicate ~= false
-  if shouldDeduplicate and lastValues[observationType] == comparisonKey then
+  local renewCandidateBase = candidateBaseRenewDue and candidateBaseTypes[observationType] == true
+  if shouldDeduplicate and lastValues[observationType] == comparisonKey and not renewCandidateBase then
     return true
   end
 
@@ -349,6 +360,9 @@ end
 local function beginProducerSession()
   -- Producer sessions track TCP connections; game loads use journalGeneration.
   -- No consecutive readiness sample may straddle a TCP epoch.
+  candidateBaseRenewDue = false
+  candidateBaseWasGameplay = false
+  candidateBaseElapsed = 0.0
   loadingRecoverySamples = 0
   inventoryCompletePublished = false
   worldContextOffered = false
@@ -1685,7 +1699,10 @@ local function pollTelemetry(candidateDelta)
   reconcileLoading(isMenu, worldReady)
   local worldVerified = gameSessionReady and worldReady and isMenu ~= nil
     and not menuContext.is_loading and not loadingProgressUnknown
+  candidateBaseRenewDue = false
   if not worldVerified then
+    candidateBaseWasGameplay = false
+    candidateBaseElapsed = 0.0
     local knownLoading = menuContext.is_loading and not loadingProgressUnknown and isMenu ~= nil
     local loadingOffered = knownLoading and observeMenuState(isMenu, worldReady) == true
     suspendNativeCandidate25((not playerOk or player == nil) and "PLAYER_UNAVAILABLE" or "NOT_READY")
@@ -1695,8 +1712,25 @@ local function pollTelemetry(candidateDelta)
     if not playerOk then reportOnce("player", "Game.GetPlayer unavailable") end
     return
   end
+  -- Renew at the existing nominal 0.5 s poll. No catch-up burst after a stall.
+  local candidateGameplay = config.context_renewal_0_1 == true
+      and config.native_candidate_25 == true
+      and config.native_candidate_profile == "expanded" and nativeCandidate25 ~= nil
+      and connected and isMenu == false
+  if candidateGameplay then
+    candidateBaseElapsed = candidateBaseElapsed + candidateDelta
+    candidateBaseRenewDue = not candidateBaseWasGameplay or candidateBaseElapsed >= 0.5
+    if candidateBaseRenewDue then candidateBaseElapsed = 0.0 end
+  else
+    candidateBaseElapsed = 0.0
+  end
+  candidateBaseWasGameplay = candidateGameplay
   observeMenuState(isMenu, worldReady)
-  if not connected then return end
+  if not connected then
+    candidateBaseRenewDue = false
+    candidateBaseWasGameplay = false
+    return
+  end
   worldContextOffered = true
   if nativeCandidate25 then
     if isMenu == false or nativeCandidate25.active then
@@ -1715,6 +1749,7 @@ local function pollTelemetry(candidateDelta)
   observePosition(player)
   observeJournal(player, worldReady)
   observeCombat(player)
+  candidateBaseRenewDue = false
   observeWeapon(player)
   observeLife(player)
   observeVehicle(player)

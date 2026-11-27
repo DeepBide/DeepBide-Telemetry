@@ -1,5 +1,18 @@
 # DeepBide-Telemetry changelog
 
+## v1.1.0 — 2026-11-27
+
+- Add optional `context_renewal_0_1` for genuine current menu, combat, quest
+  and objective readings at a nominal 0.5-second cadence in verified
+  expanded-profile gameplay. Default false; schema 0.03 and other behavior
+  unchanged with the option off.
+- Preserve native reader modules, standalone readers and RedSocket 0.5.2
+  dependency byte-for-byte; no new network destination or data family.
+- Focused offline delta validation: retained renewal tests, explicit
+  configuration/default-off and Journal interoperability checks, plus
+  receiver/replay crosscheck. Prior physical evidence is retained; no
+  new exact-build ingame/FPS claim. See README and PROTOCOL.
+
 ## v1.0.0 — 2026-11-26 (stable)
 
 - Official baseline and expanded profiles, with optional Journal and live-target contracts.

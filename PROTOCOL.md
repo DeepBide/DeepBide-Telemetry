@@ -1,6 +1,6 @@
 # DeepBide-Telemetry wire guide
 
-Stable v1.0.0 for Cyberpunk 2077 2.5. The game producer
+Version 1.1.0 for Cyberpunk 2077 2.5. The game producer
 does not depend on a particular consumer, assistant, database or HUD. No game
 version, dependency binary or producer identity is authenticated by this
 protocol alone. The example is for a local developer, not an approved deployment.
@@ -115,6 +115,48 @@ reports. A later delta does not renew an expired full inventory baseline.
 The example retains a loading boundary until an explicit nonloading menu
 witness and requires a menu witness before world data. It is not an advice
 engine or a complete product admission implementation.
+
+### Opt-in current-context renewal 0.1
+
+Introduced in mod version 1.1.0; schema_version remains 0.03.
+The new optional boolean config field `context_renewal_0_1` defaults to
+false (missing is also false). With native_candidate_25 enabled, true
+requires native_candidate_profile="expanded" and poll_interval_seconds=0.5
+(the existing default if omitted). Non-boolean values or incompatible
+enabled configurations are refused before registration/socket creation.
+An omitted or false option keeps existing deduplication and the independent
+Journal/target contracts unchanged. It does not enable the producer itself.
+
+In a verified, connected gameplay poll (current UI says not in menu,
+attached player, not pregame, no unresolved loading state), the existing
+native reads for MENU_STATE, COMBAT_STATE, ACTIVE_QUEST and ACTIVE_OBJECTIVE
+may bypass same-value deduplication. Each emitted observation is a fresh
+successful read, with a new message ID and ordinary producer timestamp;
+timestamp resolution is unchanged and consecutive samples may have equal
+timestamp strings. No cached or failed read is relabeled. A successful
+explicit negative read is valid; unknown is not absence. Combat=true is a
+valid current reading. No other type, payload schema or provenance field
+is changed by this option. The Journal 0.2 sample_seq/generation/baseline
+and invalidation contract, if enabled separately, remains intact: its
+existing renewals and the new bypass do not emit duplicate observations
+for one read. Without Journal verification, failed Journal reads remain
+suppressed; the consumer must expire them. No synthetic invalidation or
+positive value is invented.
+
+The nominal interval is 0.5 s of update time while eligible; no guaranteed
+wall-clock, receive or delivery deadline. A delayed update does not emit
+catch-up samples, and the existing ACK window/refusal behavior remains.
+No new periodic renewal during ordinary menus/loading/unknown readiness,
+or when disconnected. Existing transitions and independently enabled
+Journal/target renewal continue as before. Fresh entry or new TCP epoch
+rearms the four-read renewal; loading revokes old world state and existing
+native generation/Journal lifecycle remains authoritative. Consumers must
+discard/expire on loss, session changes and generation boundaries, never
+treat heartbeat or same-value dedup silence as fresh evidence, and require
+the next eligible current observations after recovery. A nominal rate
+does not justify expanding any consumer freshness limit. No consumer
+should infer game semantics, a connected process identity, or advice
+eligibility from cadence alone.
 
 ## Expanded profile: supported local observation stream (not TCP)
 
