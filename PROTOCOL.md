@@ -183,6 +183,51 @@ A new opening can rearm diagnostics but cannot erase prior missing evidence.
 After rotation, do not certify bytes already present as a new live session.
 A registration marker is not process identity.
 
+### Optional external CET follower (1.1.0)
+
+The source-only Python example offers bounded, opt-in `--follow` and an
+importable `follow_cet` callback API. It begins at the witnessed EOF and
+requires a future valid SESSION opening. A pre-opening file replacement
+rebases at EOF and requires a future registration/opening. Native rows
+are validated through the existing expanded contract and replay; no new
+wire type, sensor, runtime writer or transport is introduced.
+
+A normal post-opening rotation can bridge only the immediate `scripting.1.log`
+with the same old file identity, full consumed-prefix SHA-256 and matching
+tail, stable retained file boundary and complete archived lines. The unread
+archive suffix is validated before accepting the successor. Its first native
+row must continue the current generation's exact next sequence, or start
+an admissible new generation after the prior explicit close. Missing,
+ambiguous or overwritten archives, incomplete cross-file rows, skipped
+rotations and invalid successor order fail closed. No automatic replay of
+historical files, hidden resynchronization, or merging of unverified bytes.
+
+Receipt fields:
+
+- `source_continuity`: `APPEND_SCOPE`, `ROTATION_VERIFIED_SCOPE`,
+  `LOST_AFTER_OPEN`, `UNVERIFIED_BEFORE_OPEN` or `WAITING_FOR_FRESH_OPEN`.
+- `source_rotations_observed` counts detected changes; `source_rotations_verified`
+  counts only boundaries with a validated successor native row.
+- `source_rotation_recovered_rows` counts validated rows recovered from
+  archived tails; `source_continuity_error` reports a bounded reason or null.
+- `current_producer_attested` is always false. `capture_integrity` describes
+  the observed scope, not complete field semantics. `CLOSED_NO_RECORDED_LOSS`
+  does not erase UNKNOWN/UNAVAILABLE or interrupted stash snapshots.
+
+The follower caps each raw source file at 64 MiB, newly scanned bytes at
+128 MiB, lines at 65536 bytes and accepted rows at 200000; the native row
+byte/shape budgets still apply. It reads the log only; there are no writes,
+network calls or external services. Default duration 900 seconds, explicit
+1..3600 seconds or supervised until-stop with the same caps; poll 0.05..2
+seconds (default 0.5). A missing current file after opening is allowed a
+bounded retry (max of 1 second or three polls), then stops incomplete.
+A stop with a pending boundary or partial line is incomplete. The consumer
+must revoke context on invalidation or continuity loss and enforce its own
+process identity, freshness and lifecycle gates. The cursor is designed
+for ordinary CET rotation, not authentication against malicious log edits.
+The summary covers only observed input up to stop, not an exhaustive EOF
+attestation or empirical FPS claim.
+
 Families and kind names (read the accompanying modules for
 the exact data fields and native source names):
 

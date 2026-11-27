@@ -1,4 +1,10 @@
 {
+  "cet_follow_contract": {
+    "current_producer_attested": false,
+    "distribution": "SOURCE_ARCHIVE_ONLY",
+    "opt_in": true,
+    "version": "0.1"
+  },
   "context_renewal_contract": {
     "config_key": "context_renewal_0_1",
     "default": false,
@@ -11,14 +17,16 @@
   "files": {
     ".gitattributes": "1f188a384f3a7d8e293f83c43a896957fff3e9ff9fc3f752e6d78825f92f65ec",
     ".gitignore": "3ecff643cc3a0fbb283b781db92fc85ad2c045a8f1857b519af80b23781cd594",
-    "CHANGELOG.md": "c417f38b583f08439e74a4100b4e06f00e6c90f9059cb386d8245dddf8ddd0e6",
+    "CHANGELOG.md": "90889bd754a440e56af1d6024663c359818ba8a77e9da0e49498850ae60d7f50",
     "LICENSE": "ff6ff85667b3e057a53c6ecc395e77be8df74dc61f1cb14400089afa7f68faa8",
-    "PROTOCOL.md": "56e2ca5ac009488fb5359a81509e9b74bba9626317331b30c7f6c19666bed3dd",
-    "README.md": "42f51e4b92ba12541b1da7ec2e881f914c9500c17f2af056095700adfd3d3bc9",
-    "THIRD_PARTY.md": "e86657d4e8777b22ea2c64d5b1e3cb5cc74548c4ddc71d2a5072e9cf5b5439e9",
+    "PROTOCOL.md": "02fa7ed861437c8403aafadd8624ea3165eb765df605fc64005bbfeceb37cdc4",
+    "README.md": "3f0ebe01da79ad2d3db3fda1f33aa76ac5eaaa80a97ba5994fdc1ae8a6cfd74e",
+    "THIRD_PARTY.md": "d485328e01d26304501be149615f08a9651e98c1daf057c26c4cb1bf3a244d41",
+    "examples/cet_follow.py": "6efacfb4da896fa9635485c846098cf06dbfae1ab8a62a1d9fbd8803a2d72322",
     "examples/expanded_contract.py": "8b1e76368290180d565b15f7a6b4cc1d6e926bd9cbbb455e0241dddb8d91c9cb",
-    "examples/expanded_reader.py": "40ce764f1d9c3971a8def870711fe0e87ef8a2fdee0a299c17170f5f1aa13ec1",
+    "examples/expanded_reader.py": "a8ee7fb8a7583e98b8c38a3a6bd4f1ce265569c1130075c036193b863cee8f95",
     "examples/receiver.py": "6b55afc532f383f146607de3f07cbbbe2640c4df06f8a7e8dfaf28c6d2d895d3",
+    "examples/test_cet_follow.py": "dd2b2ebef0e497f71cebaa6bc441be36c22d42b883df0492e9f689f6c9b4cc6a",
     "examples/test_expanded_reader.py": "b20879f8f975f65f0df8ba91630b45308ab9917ec9796ee795d0aa858a5aa6b3",
     "examples/test_receiver.py": "0f456dd5e39a240c2d7e61fa8f22dd7d0bad1da5ea3dd363e190f09679d6cecc",
     "mod/DeepBideTelemetry/config.example.json": "e7308005e085fabcb4582b52cac40722c96ebef4a81985fc78144486d5a47db9",
@@ -26,7 +34,7 @@
     "mod/DeepBideTelemetry/native_candidate_25.lua": "e1035aa677bec3879c8e31d8ffa0630b4b679a95db13ed7a37bffef374945e52",
     "mod/DeepBideTelemetry/native_equipment_25.lua": "7c2583fe9bfd6fa6de0b8acdf417ff1106e66eaf786d370f17bf1955b7f51784",
     "mod/DeepBideTelemetry/native_stash_25.lua": "c2fe16d07e1b5a95a52d60391c0ecf1b79cb740147ac224b8fb5fe96a5b46e0e",
-    "tools/pack.py": "2f676d932b1650ea0ceaab21702fb739897d3e6a159c742773ac8443a65cce84"
+    "tools/pack.py": "8308e41d6eedf32a3a7978f32770d099bd6145752501183479d93a1d8061d213"
   },
   "frozen_lua": {
     "init.lua": "8fe91d85602b7eb27df89db54719c7ff890d0bf066350d9e1147414641c93723",
@@ -39,7 +47,7 @@
   "physical_revision": "V1_0_0_2026_11_26_INIT_CHANGED_NATIVE_MODULES_IDENTICAL",
   "product": "DeepBide-Telemetry",
   "provenance_review": "SCOPED_SOURCE_HISTORY_REVIEW",
-  "qualification": "V1_0_0_PHYSICAL_REUSED_CONTEXT_RENEWAL_OFFLINE_PASS_SCOPED",
+  "qualification": "V1_0_0_PHYSICAL_REUSED_CONTEXT_RENEWAL_AND_ROTATION_FOLLOW_OFFLINE_PASS_SCOPED",
   "runtime_tree_sha256": "9725f27bf2f18691793d8bb543ed6376f7ff56a41969358c565affe529b303a6",
   "scope": "PUBLIC_STABLE_SCOPED",
   "source_format": "UTF8_LF_CANONICAL_LUA",

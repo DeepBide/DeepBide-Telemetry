@@ -20,7 +20,8 @@ RUNTIME_NAMES = ("init.lua", "config.example.json", "native_candidate_25.lua",
 COMMON_NAMES = ("README.md", "LICENSE", "PROTOCOL.md", "THIRD_PARTY.md", "CHANGELOG.md")
 SOURCE_EXTRAS = (".gitignore", ".gitattributes", "examples/receiver.py",
                  "examples/test_receiver.py", "tools/pack.py",
-                 "examples/expanded_contract.py", "examples/expanded_reader.py", "examples/test_expanded_reader.py")
+                 "examples/expanded_contract.py", "examples/expanded_reader.py", "examples/test_expanded_reader.py",
+                 "examples/cet_follow.py", "examples/test_cet_follow.py")
 MANIFEST = "release-manifest.json"
 
 
@@ -59,11 +60,14 @@ def manifest(files):
             "scope": "PUBLIC_STABLE_SCOPED", "license": "MIT",
             "license_scope": "ORIGINAL_DEEPBIDETELEMETRY_CODE_AND_DOCUMENTATION",
             "provenance_review": "SCOPED_SOURCE_HISTORY_REVIEW",
-            "qualification": "V1_0_0_PHYSICAL_REUSED_CONTEXT_RENEWAL_OFFLINE_PASS_SCOPED",
+            "qualification": "V1_0_0_PHYSICAL_REUSED_CONTEXT_RENEWAL_AND_ROTATION_FOLLOW_OFFLINE_PASS_SCOPED",
             "physical_revision": "V1_0_0_2026_11_26_INIT_CHANGED_NATIVE_MODULES_IDENTICAL",
             "context_renewal_contract": {"version": "0.1", "config_key": "context_renewal_0_1",
                                          "default": False, "profile": "expanded",
                                          "nominal_poll_seconds": 0.5},
+            "cet_follow_contract": {"version": "0.1", "opt_in": True,
+                                    "distribution": "SOURCE_ARCHIVE_ONLY",
+                                    "current_producer_attested": False},
             "frozen_lua": {n: h for n,h in runtime.items() if n.endswith(".lua")},
             "dependency_version": "DeepBide-RedSocket 0.5.2",
             "dependency_mod_sha256": "3ff795b8ab8e0e3d56912955349c07a47e7112e056be6128f22e8a15c4e4fbb3",

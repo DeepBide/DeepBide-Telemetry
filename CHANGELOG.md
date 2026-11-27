@@ -6,11 +6,17 @@
   and objective readings at a nominal 0.5-second cadence in verified
   expanded-profile gameplay. Default false; schema 0.03 and other behavior
   unchanged with the option off.
-- Preserve native reader modules, standalone readers and RedSocket 0.5.2
+- Preserve native reader modules, the base TCP receiver and RedSocket 0.5.2
   dependency byte-for-byte; no new network destination or data family.
+- Add an optional standalone expanded CET log follower (`--follow`,
+  `follow_cet`) with witnessed archive/sequence continuity, explicit
+  loss reporting, bounded reads and no network or log writes. Existing
+  offline capture API remains supported. Source archive only; no extra
+  runtime file or Python installation needed for players.
 - Focused offline delta validation: retained renewal tests, explicit
   configuration/default-off and Journal interoperability checks, plus
-  receiver/replay crosscheck. Prior physical evidence is retained; no
+  receiver/replay crosscheck, rotation-specific Windows filesystem tests
+  and 449-row offline reproduction. Prior physical evidence is retained; no
   new exact-build ingame/FPS claim. See README and PROTOCOL.
 
 ## v1.0.0 — 2026-11-26 (stable)

@@ -63,4 +63,4 @@ remain the property of their respective rights holders. This independent
 fan-made tool does not claim affiliation, endorsement or ownership
 of those projects.
 
-The independent expanded reader derives from our original native contract, replay, stash and reference-key code; no external cache, game asset, additional third-party dependency or external code is included.
+The independent expanded reader derives from our original native contract, replay, stash and reference-key code. Its optional CET rotation cursor and tests adapt our own original, verified internal follower; only Python's standard library is used. No external cache, game asset, additional third-party dependency or external code is included.

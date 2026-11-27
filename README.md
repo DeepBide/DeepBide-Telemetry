@@ -226,7 +226,9 @@ exact weapon-wall binding or universal consumer/advice guarantee.
 ### v1.1.0 focused renewal validation
 
 Version 1.1.0 retains the three exact v1.0.0 native reader modules, the
-reference readers, the wire schema and RedSocket dependency. Only init.lua
+base TCP reference receiver, wire schema and RedSocket dependency. The
+expanded reader preserves its offline API and adds optional CET follow.
+Only init.lua
 and the disabled configuration template change at runtime. The renewal
 algorithm reuses earlier, scoped current-read work; the new option and
 validation make that behavior explicitly opt-in for public consumers.
@@ -246,16 +248,32 @@ gameplay, performance, or end-to-end consumer acceptance claim.
 
 Earlier v1.0.0 physical and historical performance evidence is retained
 for the unchanged components and prior tested revisions; v1.1.0 does not
-claim that its changed init.lua has been physically qualified. Actual
+claim that its changed init.lua or the new follower has been physically
+qualified. Actual
 renewal intervals and frame-time in a real session remain unmeasured.
 Consumers must enforce their own freshness and lifecycle gates; if their
 budget is exceeded they must fail closed, not extend the budget because
 renewal is enabled. No new game version or dependency support is claimed.
 
+### v1.1.0 rotation-follow validation
+
+The standalone Python follow mode reuses the original file cursor and
+native validation rather than adding sensors or changing the runtime.
+Focused Windows filesystem tests exercise normal and consecutive rotations,
+copied or missing archives, prefix mutation, truncation/refill, equal-size
+rewrite, incomplete lines, sequence gaps, duplicate rows, generation
+boundaries, privacy and explicit loss. An offline reconstruction of a
+previously recorded 449-row session across a synthetic 5 MiB CET rotation
+accepted all 449 rows, recovered one unread archived row and verified one
+rotation with zero rejected rows. The 16 UNKNOWN rows and interrupted
+stash snapshot remained explicit. No raw captures are included.
+This is offline evidence, not a new ingame or FPS test.
+
 ## Verify and reproduce
 
 The source ZIP contains canonical editable Lua, the Python reference
-receiver, expanded reader, tests, documentation and a standard-library packer. The source and
+receiver, expanded reader with CET follow, tests, documentation and a
+standard-library packer. The source and
 mod manifests pin file hashes, the runtime tree and the four Lua file hashes.
 This repository's main-branch README may receive documentation-only updates
 after a release. For exact verification and reproduction, use the canonical
@@ -266,6 +284,8 @@ From the extracted source root:
 
 - `python -B examples/test_receiver.py` — base synthetic tests.
 - `python -B examples/test_expanded_reader.py` — expanded synthetic tests.
+- `python -B examples/test_cet_follow.py` — rotation, privacy and continuity tests.
+- `python -B -m unittest discover -s examples -p "test_*.py"` — all standalone tests.
 - `python -B tools/pack.py` — verify exact release source.
 - `python -B tools/pack.py --output path/to/new-mod.zip` — reproduce
   the exact mod-layout ZIP (output must not already exist).
@@ -277,9 +297,79 @@ checksums. This is not a cryptographic signature or malware certification.
 
 ## Independent expanded reader
 
-The expanded profile emits the documented local structured stream. The source archive includes examples/expanded_reader.py and examples/expanded_contract.py, using the original native validation/replay and stash reassembly, with no private cache or assistant dependency. Read a complete local JSONL capture with python examples/expanded_reader.py capture.jsonl; use --format cet for an explicit completed CET log. Aggregate output only; no network or writes. The importable ExpandedReader.accept / accept_json API returns validated rows. Do not interpret an offline capture as current process identity or fresh live facts. Reference offers are distinct from missing references or resolved metadata. A closed stream is not proof of all field semantics; incomplete snapshots are separately counted.
+The expanded profile emits the documented local structured stream. The
+source archive includes `examples/expanded_reader.py`,
+`examples/expanded_contract.py` and `examples/cet_follow.py`, using the
+existing native validation/replay, stash reassembly and verified rotation
+cursor, with no private cache or assistant dependency. Python 3.11+,
+standard library only; these tools run outside the game and are not
+installed with the mod ZIP.
 
-The reader reports explicit gaps and interrupted snapshots separately. Keep each completed capture in its own chronological scope; do not concatenate rotated or unrelated logs and treat them as a continuous live session. CET may rotate logs; preserve files locally if you need later reconciliation. See PROTOCOL.md for limits.
+Read a completed capture:
+
+```shell
+python -B examples/expanded_reader.py capture.jsonl
+python -B examples/expanded_reader.py "path/to/scripting.log" --format cet
+```
+
+Follow future expanded-profile observations, including normal CET log
+rotation (new in 1.1.0):
+
+```shell
+python -B examples/expanded_reader.py "path/to/scripting.log" --follow --max-seconds 900
+python -B examples/expanded_reader.py "path/to/scripting.log" --follow --until-stop
+```
+
+Choose one command. The second follows until Ctrl+C; input, row and line
+limits remain active. The first defaults to 900 seconds, configurable
+from 1 to 3600. Polling defaults to 0.5 seconds (0.05 to 2 seconds).
+Start before a fresh SESSION opening, preferably with the CET log already
+present. Existing bytes are not imported. A replacement before opening
+rebases at the observed EOF and requires a subsequent registration and
+fresh opening; restart/rearm if no such opening occurs. Never alter the
+game or log files merely to force the reader to accept a session.
+
+The optional mode recovers the unread tail of the immediately preceding
+`scripting.1.log` only when its file identity, consumed prefix hash,
+tail and stable boundary match. It accepts the successor only under the
+existing sequence/generation rules. No stitching across partial files,
+guessing across missed rotations, or accepting copied history as live facts.
+If continuity cannot be verified, the follower stops and reports
+`LOST_AFTER_OPEN` (or `UNVERIFIED_BEFORE_OPEN`); the consumer must revoke
+its derived context. A verified rotation is `ROTATION_VERIFIED_SCOPE`.
+See PROTOCOL.md for exact limits.
+
+Both CLI modes print only aggregate JSON; no capture writes or network
+calls. Exit 0 indicates a closed capture with no recorded integrity loss
+within the observed scope; exit 2 indicates incomplete/unverified input.
+The importable `ExpandedReader.accept` / `accept_json` API remains
+available for offline data. For an application following CET, import
+`follow_cet` from `expanded_reader` (with the examples directory on
+the Python import path) and supply `on_row`:
+
+```python
+from expanded_reader import follow_cet
+
+def consume(row):
+    # Application-owned handling of a validated observation.
+    # UNKNOWN/UNAVAILABLE and lifecycle/gap rows retain their meaning.
+    pass
+
+summary = follow_cet("path/to/scripting.log", on_row=consume,
+                     max_seconds=900)
+```
+
+A caller can also pass a cooperative `stop_requested` callable; an
+explicit `max_seconds=None` supports supervised until-stop. The reader
+does not persist or publish raw rows, and callers own retention/privacy.
+It verifies bounded continuity at the observed file/contract level, not
+the identity of a running game or resistance to deliberate log tampering.
+Do not interpret a closed capture or validated callback as product-level
+facts, a complete set of sensors, or a universal freshness guarantee.
+Reference offers, UNKNOWN/UNAVAILABLE, explicit loss indicators and
+interrupted stash snapshots remain separate. Keep each capture in its
+own chronological scope; never concatenate unrelated or rotated logs
+and present a post-exit replay as a continuous live witness.
 
 ## License and acknowledgments
 
