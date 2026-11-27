@@ -6,6 +6,7 @@
   "host": "127.0.0.1",
   "inventory_delta_poll_seconds": 2.0,
   "journal_verification_0_1": false,
+  "native_budget_fence_0_1": false,
   "native_candidate_25": false,
   "native_candidate_profile": "baseline",
   "poll_interval_seconds": 0.5,

@@ -47,6 +47,7 @@ local nativeCandidate25 = nil
 local candidateBaseRenewDue = false
 local candidateBaseWasGameplay = false
 local candidateBaseElapsed = 0.0
+local candidateBasePollSequence = 0
 local candidateBaseTypes = {MENU_STATE=true, COMBAT_STATE=true, ACTIVE_QUEST=true, ACTIVE_OBJECTIVE=true}
 local journalElapsed = 0.0
 local journalSeq = { ACTIVE_OBJECTIVE = 0, ACTIVE_QUEST = 0 }
@@ -153,6 +154,16 @@ local function loadConfig()
     if decoded.native_candidate_profile ~= "expanded" or (decoded.poll_interval_seconds or 0.5) ~= 0.5 then
       error("context renewal requires expanded profile and 0.5 second poll interval")
     end
+  end
+  -- Optional producer-side causal fence. Old configs/wire consumers retain
+  -- their existing behavior. Never enable it with a nonrenewing producer.
+  if decoded.native_budget_fence_0_1 ~= nil and type(decoded.native_budget_fence_0_1) ~= "boolean" then
+    error("invalid boolean config field: native_budget_fence_0_1")
+  end
+  if decoded.native_budget_fence_0_1 == true and (decoded.native_candidate_25 ~= true
+      or decoded.context_renewal_0_1 ~= true or decoded.native_candidate_profile ~= "expanded"
+      or (decoded.poll_interval_seconds or 0.5) ~= 0.5) then
+    error("native budget fence requires expanded current-context renewal")
   end
   if decoded.journal_verification_0_1 == true and decoded.schema_version ~= "0.03" then
     error("journal verification requires schema 0.03")
@@ -292,6 +303,20 @@ local function sendObservation(observationType, payload, method, deduplicate, st
     },
     confidence = 1.0
   }
+  -- Stamp only the actual fresh BASE read, at its offer boundary. MENU_STATE
+  -- precedes the native tick; a barrier emitted inside the poll therefore
+  -- cannot retroactively mark MENU_STATE. Consumers must match all four
+  -- rows' generation, barrier and poll, not combine adjacent polls.
+  if renewCandidateBase and config.native_budget_fence_0_1 == true and nativeCandidate25
+      and candidateBasePollSequence > 0 and candidateBasePollSequence <= 2147483647 then
+    local gen, barrier = nativeCandidate25:budget_fence()
+    if gen and barrier then
+      envelope.provenance.native_budget_fence = {
+        version = "0.1", generation = gen, barrier_sequence = barrier,
+        poll_sequence = candidateBasePollSequence
+      }
+    end
+  end
   local liveTarget = observationType == "TARGETED_ENTITY" and config.target_live_contract_0_1 == true
   local liveJournal = config.journal_verification_0_1 == true and journalSeq[observationType] ~= nil
   if liveJournal then
@@ -363,6 +388,7 @@ local function beginProducerSession()
   candidateBaseRenewDue = false
   candidateBaseWasGameplay = false
   candidateBaseElapsed = 0.0
+  candidateBasePollSequence = 0
   loadingRecoverySamples = 0
   inventoryCompletePublished = false
   worldContextOffered = false
@@ -1720,7 +1746,13 @@ local function pollTelemetry(candidateDelta)
   if candidateGameplay then
     candidateBaseElapsed = candidateBaseElapsed + candidateDelta
     candidateBaseRenewDue = not candidateBaseWasGameplay or candidateBaseElapsed >= 0.5
-    if candidateBaseRenewDue then candidateBaseElapsed = 0.0 end
+    if candidateBaseRenewDue then
+      candidateBaseElapsed = 0.0
+      -- Saturate at an invalid sentinel rather than ever reusing a poll ID.
+      if config.native_budget_fence_0_1 == true and candidateBasePollSequence <= 2147483647 then
+        candidateBasePollSequence = candidateBasePollSequence + 1
+      end
+    end
   else
     candidateBaseElapsed = 0.0
   end

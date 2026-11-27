@@ -52,6 +52,14 @@ class ConsumerTests(unittest.TestCase):
         self.w = Window(ttl=5, clock=lambda: self.now)
         self.w.accept(menu(1))
 
+    def test_optional_native_budget_fence_legacy_receiver_compatibility(self):
+        frame=obs("COMBAT_STATE", {"in_combat": False}, 2)
+        frame["provenance"]["native_budget_fence"]={"version":"0.1","generation":3,
+                                                  "barrier_sequence":166,"poll_sequence":42}
+        self.assertEqual(self.w.accept(frame)["status"],"accepted")
+        self.now=5
+        self.assertNotIn("COMBAT_STATE",self.w.summary()["current_fact_types"])
+
     def test_receive_expiry_not_heartbeat(self):
         self.w.accept(obs("COMBAT_STATE", {"in_combat": False}, 2))
         self.now = 4

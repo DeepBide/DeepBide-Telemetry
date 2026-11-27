@@ -158,6 +158,84 @@ does not justify expanding any consumer freshness limit. No consumer
 should infer game semantics, a connected process identity, or advice
 eligibility from cadence alone.
 
+### Optional native budget recovery fence 0.1
+
+Set `native_budget_fence_0_1=true` only with `context_renewal_0_1=true`,
+`native_candidate_25=true`, expanded profile and 0.5-second polling.
+Missing/false preserves existing behavior; incompatible/invalid configs
+are refused before socket/observer registration. This is an optional
+producer-side provenance extension, not a new sensor, wire type or
+consumer policy. Schema remains 0.03; expanded row contract remains 0.3.
+
+The native budget remains 24 offered rows per elapsed-second bucket.
+After loss the producer suppresses further correlated state until an
+explicit `SOURCE_GAP` (`source=Producer.budget`,
+`reason=EVENTS_DROPPED`) is offered. The barrier is prioritized at
+replenishment; the existing bounded lifecycle close path reserves a
+close and reports pending loss. Counts are aggregate attempted emission/
+callback/scheduler loss indicators, not an exact census of distinct
+native actions or their kinds. A gap invalidates native correlations,
+including pending device/root/stash state; future snapshots cannot repair
+the historical loss. Budget loss is not a TCP epoch break by itself.
+
+The independent BASE poll uses current UI, attachment, lifecycle and
+Journal/combat reads, not the optional native replay or its dedup cache.
+For each genuinely renewed MENU_STATE, ACTIVE_OBJECTIVE, ACTIVE_QUEST
+and COMBAT_STATE, the optional provenance object may be offered:
+
+```json
+{"native_budget_fence":{"version":"0.1","generation":3,"barrier_sequence":166,"poll_sequence":42}}
+```
+
+Integers are positive and at most 2147483647. The envelope session_id
+identifies the TCP epoch and matches the expanded row producer_session.
+generation and barrier_sequence identify the exact successfully offered
+native budget gap in that epoch. poll_sequence is increasing per TCP
+epoch, never reused, and does not count missed polls or promise timing.
+The marker is read at each frame's offer boundary; absent before any
+barrier, while loss is pending, on inactive native generation, or on
+an unavailable marker. There is no tag on cached facts, heartbeat or
+other observation types. MENU_STATE is offered before the native tick:
+if a barrier occurs mid-poll, the four offers cannot all match its
+tuple. Wait for an actual later matching set, never assemble one from
+adjacent polls.
+
+For a consumer requiring a post-gap BASE-only recovery:
+
+1. Independently validate exact approved producer/configuration, game
+   process/TCP peer and connection, session/run scope, native sequence
+   and generation opening. Process native data through the existing
+   validator and retain each actual budget barrier; revoke prior context
+   and keep native-domain loss sticky. An unmatched marker is not a
+   barrier receipt. Reject native source discontinuity, malformed rows,
+   close, reconnect, ambiguous lifecycle and other unresolved SOURCE_GAPs.
+2. After the latest validated budget barrier, discard old cached BASE
+   data and fence receiver ingress by its actual monotonic arrival/frame
+   watermark. Require distinct accepted message IDs and exactly one of
+   each of the four genuine rows, in MENU_STATE, ACTIVE_OBJECTIVE,
+   ACTIVE_QUEST, COMBAT_STATE order, matching the same session, generation,
+   barrier_sequence and strictly new poll_sequence. Refuse duplicates,
+   missing/wrong marker, skipped/changed generation, older barrier,
+   mixed polls/peers, backlog, loading, menu, invalid Journal or transport
+   boundary. Require all four to be fresh under the consumer's existing
+   tighter age/receive-order/source-age gates; no TTL extension, no
+   treating second-resolution timestamps as causal order.
+3. Recheck current peer/lifecycle, latest observed barrier and freshness
+   before any use. A new gap/close, loss of identity, stale/partial set
+   or other invalidating boundary revokes the scope. Only BASE facts
+   in the fresh set are supported. This is not native READY, restoration
+   of lost events, proof of death/resurrection/mission completion or
+   entitlement to an advice/action. Leave native-dependent correlations,
+   learning and terminal inference UNKNOWN until their own evidence.
+   A consumer may choose to remain silent. No cross-stream authenticity
+   or lossless capture guarantee is claimed.
+
+The legacy reference receiver accepts the additional provenance object
+but does not implement this stronger recovery policy. Consumers must
+opt in deliberately and test it. The original source-only follower
+retains ordinary rotation and integrity limits. No capture or gameplay
+data is uploaded by these tools.
+
 ## Expanded profile: supported local observation stream (not TCP)
 
 Both profiles were physically tested on the documented runtime pairing. Expanded is opt-in; see README for scope, evidence and configuration.

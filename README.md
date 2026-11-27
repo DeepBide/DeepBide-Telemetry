@@ -225,11 +225,11 @@ exact weapon-wall binding or universal consumer/advice guarantee.
 
 ### v1.1.0 focused renewal validation
 
-Version 1.1.0 retains the three exact v1.0.0 native reader modules, the
-base TCP reference receiver, wire schema and RedSocket dependency. The
-expanded reader preserves its offline API and adds optional CET follow.
-Only init.lua
-and the disabled configuration template change at runtime. The renewal
+Version 1.1.0 retains the native equipment and stash modules, the base TCP
+reference receiver, wire schema and RedSocket dependency. The expanded
+reader preserves its offline API and adds optional CET follow. The runtime
+changes are init.lua, native_candidate_25.lua (budget fence only) and the
+disabled configuration template. The renewal
 algorithm reuses earlier, scoped current-read work; the new option and
 validation make that behavior explicitly opt-in for public consumers.
 
@@ -248,8 +248,8 @@ gameplay, performance, or end-to-end consumer acceptance claim.
 
 Earlier v1.0.0 physical and historical performance evidence is retained
 for the unchanged components and prior tested revisions; v1.1.0 does not
-claim that its changed init.lua or the new follower has been physically
-qualified. Actual
+claim that the changed init.lua, native candidate module or new follower
+has been physically qualified. Actual
 renewal intervals and frame-time in a real session remain unmeasured.
 Consumers must enforce their own freshness and lifecycle gates; if their
 budget is exceeded they must fail closed, not extend the budget because
@@ -268,6 +268,20 @@ accepted all 449 rows, recovered one unread archived row and verified one
 rotation with zero rejected rows. The 16 UNKNOWN rows and interrupted
 stash snapshot remained explicit. No raw captures are included.
 This is offline evidence, not a new ingame or FPS test.
+
+### Optional native budget recovery fence
+
+For applications combining base TCP observations with expanded diagnostics,
+`native_budget_fence_0_1` (default false) adds causal provenance for a
+fresh four-signal BASE set after an explicit native budget barrier. Enable
+only with current-context renewal, expanded profile and the 0.5-second
+poll. It never re-labels or restores lost native events. The native budget
+and explicit loss reporting are unchanged; no new sensor or frame is
+created. See PROTOCOL.md for matching generation/barrier/poll tuples,
+consumer-owned freshness and identity requirements, and invalidation.
+Focused offline LuaJIT checks use the exact producer and published
+RedSocket wrapper with synthetic game witnesses. This is not a new
+physical performance or end-to-end consumer acceptance claim.
 
 ## Verify and reproduce
 

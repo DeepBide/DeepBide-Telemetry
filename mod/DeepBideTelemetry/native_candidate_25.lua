@@ -253,10 +253,18 @@ function M.new(sink,equipment)
       else self.stash_last=nil end
     else self.stash_last=nil end
   end
+  -- Only a successfully offered explicit budget barrier can establish a
+  -- causal source fence. It is not a claim of complete native correlations.
+  function self:budget_fence()
+    if not self.active or self.terminal or self.dropped ~= 0 then return nil end
+    local gen=int(self.generation,1,2147483647)
+    local seq=int(self.last_budget_barrier_sequence,1,2147483647)
+    if gen and seq then return gen,seq end
+  end
   function self:resume()
     if self.active or self.terminal then return end
     self.active=true;self.generation=self.generation+1;self.seq=0;self.elapsed=0;self.period=0
-    self.remaining=24;self.dropped=0;self.last={};self.pending=nil;self.scan=nil;self.work=nil
+    self.remaining=24;self.dropped=0;self.last_budget_barrier_sequence=nil;self.last={};self.pending=nil;self.scan=nil;self.work=nil
     self.area=1;self.slot=1;self.round=1;self.acc=0;self.equipTurn=true;self.proximityPaused=false
     self.record_seen={};self.record_count=0;self.record_queue={};self.record_gaps=0
     self.record_head=1;self.record_tail=0
@@ -277,7 +285,7 @@ function M.new(sink,equipment)
     local missed=self.dropped
     self.remaining=math.max(1,self.remaining)
     emit("SESSION","Producer.lifecycle","OBSERVED",nil,{ready=false,reason=reason,dropped_events=missed})
-    self.active=false;self.last={};self.pending=nil;self.scan=nil;self.work=nil
+    self.active=false;self.last_budget_barrier_sequence=nil;self.last={};self.pending=nil;self.scan=nil;self.work=nil
     self.record_seen={};self.record_queue={};self.stash_work=nil;self.stash_last=nil;self.tracked_active_root=nil
   end
   function self:shutdown() self:suspend("SHUTDOWN");self.terminal=true end
@@ -830,10 +838,12 @@ function M.new(sink,equipment)
         self.stash_work=nil;self.stash_last=nil;self.stash_due=self.elapsed+30
         self.last={};self.work=nil
         self.dropped=0
-        if not emit("SOURCE_GAP","Producer.budget","UNKNOWN","EVENTS_DROPPED",{count=n}) then
+        local barrier=emit("SOURCE_GAP","Producer.budget","UNKNOWN","EVENTS_DROPPED",{count=n})
+        if not barrier then
           self.dropped=self.dropped+n
           return
         end
+        self.last_budget_barrier_sequence=barrier
       end
     end
     if self.pending and self.elapsed>=self.pending.due then

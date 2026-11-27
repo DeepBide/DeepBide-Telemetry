@@ -6,8 +6,11 @@
   and objective readings at a nominal 0.5-second cadence in verified
   expanded-profile gameplay. Default false; schema 0.03 and other behavior
   unchanged with the option off.
-- Preserve native reader modules, the base TCP receiver and RedSocket 0.5.2
-  dependency byte-for-byte; no new network destination or data family.
+- Preserve native equipment/stash modules, base TCP receiver and RedSocket
+  0.5.2 dependency byte-for-byte; no new network destination or data family.
+- Optional native budget fence 0.1 on genuine four-signal renewal; matching
+  generation/barrier/poll provenance, no budget increase, no native loss
+  erasure. Default false; existing wire and expanded row schemas retained.
 - Add an optional standalone expanded CET log follower (`--follow`,
   `follow_cet`) with witnessed archive/sequence continuity, explicit
   loss reporting, bounded reads and no network or log writes. Existing
