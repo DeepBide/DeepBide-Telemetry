@@ -1,6 +1,6 @@
 # DeepBide-Telemetry for Cyberpunk 2077
 
-**v1.1.0 · MIT · Windows x64**
+**v1.2.0 development candidate · NOT RELEASED · MIT · Windows x64**
 
 Read-only, opt-in game-state observations for local applications. Build your
 own tools, companion applications, experiments or integrations using a
@@ -283,6 +283,25 @@ Focused offline LuaJIT checks use the exact producer and published
 RedSocket wrapper with synthetic game witnesses. This is not a new
 physical performance or end-to-end consumer acceptance claim.
 
+### Optional world clock (development candidate)
+
+The new source branch adds read-only WORLD_TIME observations for
+Night City's hour/minute/day, optional absolute world seconds and
+optional separate native playthrough counter. It reuses the current
+UI/world/connection lifecycle and existing TCP observation/ACK path.
+Enable `world_time_0_1` only with a compatible consumer; default false,
+including in the supplied config template. No clock is changed.
+
+The producer emits fresh samples at a bounded nominal 1 s cadence
+and invalidates them on menu, load, session boundary or failed read.
+Midnight and raw signed changes are explicit. An optional UI time-skip
+finish callback is a candidate witness, not automatic causal proof.
+Sleep and reload attribution remain conditional; the exact engine
+API/clock semantics and hook availability require physical validation.
+See PROTOCOL.md for the new fields, limits and consumer requirements.
+The earlier 1.1.0 candidate and its CP-M1 scoped physical evidence are
+retained; this new runtime has not been physically qualified.
+
 ## Verify and reproduce
 
 The source ZIP contains canonical editable Lua, the Python reference
@@ -299,6 +318,7 @@ From the extracted source root:
 - `python -B examples/test_receiver.py` — base synthetic tests.
 - `python -B examples/test_expanded_reader.py` — expanded synthetic tests.
 - `python -B examples/test_cet_follow.py` — rotation, privacy and continuity tests.
+- `python -B examples/test_world_time.py` — optional world clock, ranges, sequence, invalidation and TTL.
 - `python -B -m unittest discover -s examples -p "test_*.py"` — all standalone tests.
 - `python -B tools/pack.py` — verify exact release source.
 - `python -B tools/pack.py --output path/to/new-mod.zip` — reproduce

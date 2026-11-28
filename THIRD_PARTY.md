@@ -64,3 +64,21 @@ fan-made tool does not claim affiliation, endorsement or ownership
 of those projects.
 
 The independent expanded reader derives from our original native contract, replay, stash and reference-key code. Its optional CET rotation cursor and tests adapt our own original, verified internal follower; only Python's standard library is used. No external cache, game asset, additional third-party dependency or external code is included.
+
+
+## World clock research references (development candidate)
+
+Thanks to the REDmodding/NativeDB documentation and modding communities.
+The following links informed API discovery only; the new reader and
+validation are original DeepBide code, without importing third-party
+implementation code or assets:
+
+- [NativeDB gameTimeSystem](https://wiki.redmodding.org/nativedb-documentation/classes/gametimesystem)
+- [REDnode ScriptGameInstance](https://edgemodders.github.io/REDnode/game/t/ScriptGameInstance.html)
+- [CETBridge handlers, Y4rd13](https://github.com/Y4rd13/cyber-engine-tweak-mcp/blob/main/cet-mod/CETBridge/handlers.lua)
+- [Equipment-EX, psiberx](https://github.com/psiberx/cp2077-equipment-ex/blob/master/scripts/OutfitSystem.reds)
+- [SantaMuerte, SkyrimLL](https://github.com/SkyrimLL/Cyberpunk2077/blob/main/SantaMuerte/r6/scripts/SantaMuerte/SantaMuerte_Controllers.reds)
+
+These are API references/independent usage examples, not a claim of
+affiliation, permission to redistribute their code, or exact CP2.5
+physical qualification.

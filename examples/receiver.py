@@ -21,7 +21,7 @@ KINDS = frozenset({
     "MENU_STATE", "PLAYER_POSITION", "COMBAT_STATE", "PLAYER_LIFE_STATE",
     "ACTIVE_QUEST", "ACTIVE_OBJECTIVE", "JOURNAL_UNAVAILABLE",
     "CURRENT_WEAPON", "VEHICLE_STATE", "CURRENT_DISTRICT", "TARGETED_ENTITY",
-    "INVENTORY_SNAPSHOT", "INVENTORY_DELTA",
+    "INVENTORY_SNAPSHOT", "INVENTORY_DELTA", "WORLD_TIME",
 })
 
 
@@ -141,6 +141,47 @@ def reject_constant(_):
     raise ProtocolError("INVALID_NUMBER")
 
 
+def world_time(p, previous_seq):
+    """Validate the opt-in clock extension without inferring a gameplay cause."""
+    require(p.get("contract_version") == "0.1"
+            and integer(p.get("sample_seq"), 1, 2147483647)
+            and p["sample_seq"] == previous_seq + 1)
+    base = {"contract_version", "sample_seq", "availability"}
+    if p.get("availability") == "UNAVAILABLE":
+        require(set(p) == base | {"reason"} and p.get("reason") in
+                {"menu", "loading", "session_boundary", "read_error"})
+        return False
+    mandatory = base | {"hour", "minute", "minute_of_day", "precision",
+                        "continuity", "clock_change", "skip_finish_callback_seen"}
+    optional = {"day", "second", "world_seconds", "playthrough_seconds", "delta_world_seconds"}
+    require(p.get("availability") == "OBSERVED" and mandatory <= set(p) <= mandatory | optional
+            and integer(p["hour"], 0, 23) and integer(p["minute"], 0, 59)
+            and integer(p["minute_of_day"], 0, 1439)
+            and p["minute_of_day"] == p["hour"]*60+p["minute"]
+            and type(p["skip_finish_callback_seen"]) is bool
+            and p["continuity"] in {"INITIAL", "ADJACENT", "AFTER_MENU", "AFTER_WORLD_BOUNDARY",
+                                   "AFTER_READ_GAP", "AFTER_POLL_GAP"})
+    if "day" in p:
+        require(integer(p["day"], 0, 2147483647))
+    if p["precision"] == "SECOND":
+        require(integer(p.get("world_seconds"), 0, 2147483647)
+                and integer(p.get("second"), 0, 59) and "day" in p
+                and p["world_seconds"] == p["day"]*86400+p["minute_of_day"]*60+p["second"])
+    else:
+        require(p["precision"] == "MINUTE" and "world_seconds" not in p and "second" not in p)
+    if "playthrough_seconds" in p:
+        require(number(p["playthrough_seconds"]) and 0 <= p["playthrough_seconds"] <= 2147483647)
+    if "delta_world_seconds" in p:
+        d=p["delta_world_seconds"]
+        require("world_seconds" in p and integer(d, -2147483647, 2147483647)
+                and p["continuity"] in {"ADJACENT", "AFTER_MENU", "AFTER_POLL_GAP"}
+                and p["clock_change"] == ("BACKWARD" if d<0 else "UNCHANGED" if d==0
+                                           else "LARGE_FORWARD" if d>=300 else "FORWARD"))
+    else:
+        require(p["clock_change"] == "NO_COMPARISON")
+    return True
+
+
 class Window:
     """One transport connection, one producer UUID, independently expiring facts."""
 
@@ -153,6 +194,9 @@ class Window:
         self.inventory = None
         self.inventory_at = None
         self.loading = None  # no world context before the first valid menu witness
+        self.menu_gameplay = False
+        self.world_time_seq = 0
+        self.world_time_previous = None
         self.closed = False
         self.recent, self.recent_set = deque(), set()
         self.accepted = 0
@@ -166,10 +210,12 @@ class Window:
         self.inventory = self.inventory_at = None
         self.loading = True
         self.closed = True
+        self.menu_gameplay = False
+        self.world_time_previous = None
 
     def expire(self):
         now = self.clock()
-        self.facts = {k: v for k, v in self.facts.items() if now - v[0] < self.ttl}
+        self.facts = {k: v for k, v in self.facts.items() if now - v[0] < (min(self.ttl, 2.0) if k == "WORLD_TIME" else self.ttl)}
         if self.inventory_at is not None and now - self.inventory_at >= self.ttl:
             self.inventory = self.inventory_at = None
 
@@ -211,8 +257,27 @@ class Window:
                         "stats", "cyberware", "crafting", "vendor", "pause", "unknown", "other"}
                     and (p["normalized_category"] == "loading") == p["is_loading"])
             self.loading = p["is_loading"]
+            self.menu_gameplay = not p["is_menu"] and not p["is_loading"] and p["normalized_category"] == "gameplay"
+            if not self.menu_gameplay: self.facts.pop("WORLD_TIME", None)
             if self.loading:
+                self.world_time_previous = None
                 self.revoke_world()
+        elif kind == "WORLD_TIME":
+            observed = world_time(p,self.world_time_seq)
+            if observed:
+                require(self.menu_gameplay and self.loading is False)
+                old = self.world_time_previous
+                total = p.get("world_seconds")
+                if p["continuity"] in {"ADJACENT","AFTER_MENU","AFTER_POLL_GAP"} and old is not None and total is not None:
+                    require(p.get("delta_world_seconds") == total-old)
+                else:
+                    require("delta_world_seconds" not in p)
+                self.world_time_previous = total
+                self.facts[kind] = (now,p)
+            else:
+                if p["reason"] != "menu": self.world_time_previous = None
+                self.facts.pop(kind,None)
+            self.world_time_seq = p["sample_seq"]
         elif kind == "JOURNAL_UNAVAILABLE":
             require(p.get("reason") in {"loading", "read_error", "session_boundary"}
                     and integer(p.get("generation")) and type(p.get("terminal")) is bool)
@@ -259,7 +324,7 @@ class Window:
                 self.inventory = delta(p, self.inventory)
                 self.inventory_at = now if self.inventory is not None else None
         # Never turn an invalidation or a partial inventory into a positive fact.
-        if kind not in {"JOURNAL_UNAVAILABLE", "INVENTORY_SNAPSHOT", "INVENTORY_DELTA"}:
+        if kind not in {"JOURNAL_UNAVAILABLE", "INVENTORY_SNAPSHOT", "INVENTORY_DELTA", "WORLD_TIME"}:
             self.facts[kind] = (now, p)
         if len(self.recent) >= 4096:
             self.recent_set.remove(self.recent.popleft())

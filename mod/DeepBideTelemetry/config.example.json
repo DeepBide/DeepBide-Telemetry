@@ -16,5 +16,6 @@
   "schema_version": "0.03",
   "target_live_contract_0_1": false,
   "target_renewal_seconds": null,
-  "user_id": "replace-with-a-persistent-local-uuid"
+  "user_id": "replace-with-a-persistent-local-uuid",
+  "world_time_0_1": false
 }
