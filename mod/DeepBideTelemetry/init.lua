@@ -44,6 +44,7 @@ local loadingRecoverySamples = 0
 local loadingProgressUnknown = false
 local nativeCandidate25 = nil
 local worldClock = nil
+local fractionalUtcFailed = false
 -- Opt-in renewal of four genuine current reads; never refresh cached facts.
 local candidateBaseRenewDue = false
 local candidateBaseWasGameplay = false
@@ -166,6 +167,13 @@ local function loadConfig()
       or (decoded.poll_interval_seconds or 0.5) ~= 0.5) then
     error("native budget fence requires expanded current-context renewal")
   end
+  if decoded.source_utc_fractional_0_1 ~= nil and type(decoded.source_utc_fractional_0_1) ~= "boolean" then
+    error("invalid boolean config field: source_utc_fractional_0_1")
+  end
+  if decoded.source_utc_fractional_0_1 == true and (decoded.native_candidate_25 ~= true
+      or decoded.schema_version ~= "0.03") then
+    error("fractional source UTC requires CP2.5 producer/schema 0.03")
+  end
   if decoded.world_time_0_1 ~= nil and type(decoded.world_time_0_1) ~= "boolean" then
     error("invalid boolean config field: world_time_0_1")
   end
@@ -204,6 +212,41 @@ end
 
 local function timestampUtc()
   return os.date("!%Y-%m-%dT%H:%M:%SZ")
+end
+
+-- CET 1.38.1 supplies a per-mod SQLite handle. A fixed scalar expression
+-- reads SQLite VFS UTC, not a stored table or the accelerated game clock.
+-- No file open, write, extension, attachment or external library.
+-- Finalize even on failure, no retries after failure during this mod load.
+local function sourceTimestampUtc()
+  local before = timestampUtc()
+  if config == nil or config.source_utc_fractional_0_1 ~= true or fractionalUtcFailed then
+    return before
+  end
+  local stmt
+  local ok, value = pcall(function()
+    if db == nil then return nil end
+    stmt = db:prepare("SELECT strftime('%Y-%m-%dT%H:%M:%fZ','now')")
+    if stmt == nil or stmt:step() ~= 100 then return nil end -- SQLITE_ROW
+    local stamp = stmt:get_value(0)
+    if stmt:step() ~= 101 then return nil end -- SQLITE_DONE
+    return stamp
+  end)
+  local finalized, status = true, 0
+  if stmt ~= nil then
+    finalized, status = pcall(function() return stmt:finalize() end)
+  end
+  local after = timestampUtc()
+  if ok and finalized and status == 0 and type(value) == "string"
+      and #value == 24 and value:match("^%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d%.%d%d%dZ$")
+      and after >= before then
+    local sec = value:sub(1,19) .. "Z"
+    -- Permit a real second rollover, not a different clock or cached stamp.
+    if sec == before or sec == after then return value end
+  end
+  fractionalUtcFailed = true
+  reportOnce("source-utc-fallback", "fractional UTC unavailable; using whole-second source UTC")
+  return before
 end
 
 local function stableJson(value)
@@ -727,7 +770,7 @@ local function reconcileLoading(isMenu, worldReady)
   log("loading latch recovered from fresh gameplay lifecycle and native reads")
 end
 
-local function observeMenuState(isMenu, worldReady)
+local function observeMenuState(isMenu, worldReady, observedAt)
   -- The wire cannot encode an unknown non-menu/non-loading state. Silence
   -- (and native generation revocation) is safer than claiming gameplay.
   if isMenu == nil or loadingProgressUnknown or (not menuContext.is_loading and
@@ -751,7 +794,7 @@ local function observeMenuState(isMenu, worldReady)
       raw_menu_item = menuContext.raw_menu_item,
       normalized_category = normalizeMenuCategory(isMenu)
     },
-    "UI_System.IsInMenu;MenuScenario.OnLeaveScenario;MenuScenario_HubMenu.OnSelectMenuItem;LoadingScreenProgressBarController.SetProgress;QuestTrackerGameController.OnInitialize;player.IsAttached;inkMenuScenario.IsPreGame"
+    "UI_System.IsInMenu;MenuScenario.OnLeaveScenario;MenuScenario_HubMenu.OnSelectMenuItem;LoadingScreenProgressBarController.SetProgress;QuestTrackerGameController.OnInitialize;player.IsAttached;inkMenuScenario.IsPreGame", nil, nil, observedAt
   )
 end
 
@@ -1189,6 +1232,7 @@ local function observeInventoryDelta(player)
 end
 
 local function observeCombat(player)
+  local observedAt = config.source_utc_fractional_0_1 == true and sourceTimestampUtc() or nil
   local ok, inCombat = pcall(function()
     return player:IsInCombat()
   end)
@@ -1196,7 +1240,7 @@ local function observeCombat(player)
     reportOnce("combat", "COMBAT_STATE API unavailable: " .. tostring(inCombat))
     return
   end
-  sendObservation("COMBAT_STATE", { in_combat = inCombat }, "PlayerPuppet:IsInCombat")
+  sendObservation("COMBAT_STATE", { in_combat = inCombat }, "PlayerPuppet:IsInCombat", nil, nil, observedAt)
 end
 
 local function observeLife(player)
@@ -1321,7 +1365,7 @@ local function observeJournal(player, worldReady)
     end
     if journalLifecycleState ~= "VERIFYING" and journalLifecycleState ~= "READY" then return end
   end
-  local observedAt = timestampUtc()
+  local observedAt = sourceTimestampUtc()
   local ok, manager, objective, quest = pcall(function()
     local journal = Game.GetJournalManager()
     local tracked = journal:GetTrackedEntry()
@@ -1732,6 +1776,7 @@ local function observeTargetedEntity(player)
 end
 
 local function pollTelemetry(candidateDelta)
+  local menuObservedAt = config.source_utc_fractional_0_1 == true and sourceTimestampUtc() or nil
   local playerOk, player = pcall(function() return Game.GetPlayer() end)
   local isMenu = readMenuState()
   local worldReady = playerOk and readAttachedWorld(player)
@@ -1743,11 +1788,11 @@ local function pollTelemetry(candidateDelta)
     candidateBaseWasGameplay = false
     candidateBaseElapsed = 0.0
     local knownLoading = menuContext.is_loading and not loadingProgressUnknown and isMenu ~= nil
-    local loadingOffered = knownLoading and observeMenuState(isMenu, worldReady) == true
+    local loadingOffered = knownLoading and observeMenuState(isMenu, worldReady, menuObservedAt) == true
     suspendNativeCandidate25((not playerOk or player == nil) and "PLAYER_UNAVAILABLE" or "NOT_READY")
     revokeWorldContext(knownLoading and "loading" or "read_error", knownLoading, not loadingOffered)
     -- Menus independently observed and transport heartbeats remain useful.
-    if not knownLoading then observeMenuState(isMenu, worldReady) end
+    if not knownLoading then observeMenuState(isMenu, worldReady, menuObservedAt) end
     if not playerOk then reportOnce("player", "Game.GetPlayer unavailable") end
     return
   end
@@ -1770,7 +1815,7 @@ local function pollTelemetry(candidateDelta)
     candidateBaseElapsed = 0.0
   end
   candidateBaseWasGameplay = candidateGameplay
-  observeMenuState(isMenu, worldReady)
+  observeMenuState(isMenu, worldReady, menuObservedAt)
   if not connected then
     candidateBaseRenewDue = false
     candidateBaseWasGameplay = false
@@ -2000,10 +2045,10 @@ registerForEvent("onInit", function()
       if not clockOK or type(clockModule) ~= "table" or type(clockModule.new) ~= "function" then
         error("world clock module unavailable")
       end
-      worldClock = clockModule.new(function(payload)
+      worldClock = clockModule.new(function(payload, observedAt)
         return sendObservation("WORLD_TIME", payload,
-          "Game.GetTimeSystem:GetGameTime;GameTime.GetSeconds/Hours/Minutes/Days;optional Game.GetPlaythroughTime/EngineTime.ToFloat", false)
-      end)
+          "Game.GetTimeSystem:GetGameTime;GameTime.GetSeconds/Hours/Minutes/Days;optional Game.GetPlaythroughTime/EngineTime.ToFloat", false, nil, observedAt)
+      end, nil, config.source_utc_fractional_0_1 == true and sourceTimestampUtc or nil)
       -- Optional candidate witness: only a received callback is evidence.
       -- A missing/changed method cannot prevent the ordinary clock reader.
       local hookOK = pcall(function()

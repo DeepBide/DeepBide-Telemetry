@@ -55,9 +55,15 @@ def identity(v):
 
 def timestamp(v):
     try:
-        return isinstance(v, str) and len(v) == 20 and datetime.strptime(
-            v, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%SZ") == v
-    except ValueError:
+        if not isinstance(v, str) or len(v) not in (20, 24):
+            return False
+        fmt = "%Y-%m-%dT%H:%M:%SZ" if len(v) == 20 else "%Y-%m-%dT%H:%M:%S.%fZ"
+        parsed = datetime.strptime(v, fmt)
+        canonical = parsed.strftime(fmt)
+        if len(v) == 24:
+            canonical = canonical[:-4] + "Z"
+        return canonical == v
+    except (ValueError, TypeError):
         return False
 
 

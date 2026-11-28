@@ -17,5 +17,6 @@
   "target_live_contract_0_1": false,
   "target_renewal_seconds": null,
   "user_id": "replace-with-a-persistent-local-uuid",
+  "source_utc_fractional_0_1": false,
   "world_time_0_1": false
 }

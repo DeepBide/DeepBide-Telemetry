@@ -1,6 +1,6 @@
 # DeepBide-Telemetry wire guide
 
-Version 1.1.0 for Cyberpunk 2077 2.5. The game producer
+Version 1.2.0 development candidate for Cyberpunk 2077 2.5. The game producer
 does not depend on a particular consumer, assistant, database or HUD. No game
 version, dependency binary or producer identity is authenticated by this
 protocol alone. The example is for a local developer, not an approved deployment.
@@ -23,7 +23,8 @@ Each observation has these fields:
   A message ID identifies the offered frame; session_id identifies a TCP epoch.
   User/run IDs are local correlation labels, not accounts or credentials.
 - source: "chumpilot.cet"; historical wire literal, not a dependency.
-- observation_type: one of the types below; timestamp: UTC YYYY-MM-DDTHH:MM:SSZ.
+- observation_type: one of the types below; timestamp: UTC YYYY-MM-DDTHH:MM:SSZ, or optional canonical
+  YYYY-MM-DDTHH:MM:SS.sssZ.
 - payload: a JSON object; provenance: object with sensor "cyberpunk_runtime",
   adapter "chumpilot_cet", method describing the native read. Optional
   journal_reference_contract or live_contract carry sample sequencing.
@@ -132,7 +133,7 @@ attached player, not pregame, no unresolved loading state), the existing
 native reads for MENU_STATE, COMBAT_STATE, ACTIVE_QUEST and ACTIVE_OBJECTIVE
 may bypass same-value deduplication. Each emitted observation is a fresh
 successful read, with a new message ID and ordinary producer timestamp;
-timestamp resolution is unchanged and consecutive samples may have equal
+by default timestamp resolution is unchanged and consecutive samples may have equal
 timestamp strings. No cached or failed read is relabeled. A successful
 explicit negative read is valid; unknown is not absence. Combat=true is a
 valid current reading. No other type, payload schema or provenance field
@@ -319,6 +320,39 @@ conversion. Match the active objective's time window (including
 midnight), not a stale or different quest. Time within a documented
 window is not evidence that a door is actually open or a quest can
 currently advance.
+
+### Optional fractional source UTC (1.2.0 candidate)
+
+`source_utc_fractional_0_1` is false by default. When enabled, the
+producer uses the existing CET per-mod SQLite handle for the constant scalar
+query `SELECT strftime('%Y-%m-%dT%H:%M:%fZ','now')`. SQLite obtains UTC
+from its VFS clock. No table data is read, written, attached or exported.
+No new dependency, database creation by this mod, native module or network
+call is needed. A fresh prepared statement is finalized on every query.
+The three fractional digits represent the source clock's reported value,
+not guaranteed millisecond accuracy.
+
+For MENU_STATE, the Journal pair, COMBAT_STATE and observed WORLD_TIME,
+take UTC before the actual native read. Never derive it from world time,
+elapsed updates, CPU time, receiver arrival or cached samples. The source
+validates the result's canonical shape and the surrounding whole-second
+UTC readings. A genuine second rollover is allowed. On missing/failed
+provider, inconsistent clock or statement failure, log a single sanitized
+notice and use original whole-second UTC for the remainder of that mod
+load. Other types, heartbeat and negative WORLD_TIME retain prior behavior.
+No new cadence, burst, ACK/native budget or TTL change. WORLD_TIME stays
+nominal 1 s and renewed BASE nominal 0.5 s.
+
+The existing timestamp field accepts YYYY-MM-DDTHH:MM:SSZ and, with this
+option, YYYY-MM-DDTHH:MM:SS.sssZ. Old consumers with a fixed-width parser
+must review compatibility before opt-in. The fractional value is a
+conservative pre-read source time, not a receiver-ingress or peer-identity
+receipt. Consumers must preserve it and continue enforcing source UTC,
+monotonic ingress, lifecycle and freshness independently. Do not retime
+old captures or treat fractional format as proof of clock precision or
+low latency. The new source path has Windows SQLite/LuaJIT offline fixture
+evidence; its actual CET binding, performance and cancellation reduction
+are not yet physically qualified.
 
 ## Expanded profile: supported local observation stream (not TCP)
 
