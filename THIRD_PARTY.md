@@ -82,3 +82,8 @@ implementation code or assets:
 These are API references/independent usage examples, not a claim of
 affiliation, permission to redistribute their code, or exact CP2.5
 physical qualification.
+
+### Fractional UTC API references
+
+The optional source timestamp uses the existing CET 1.38.1 sandbox `db`
+handle, as implemented in [LuaSandbox.cpp](https://github.com/maximegmd/CyberEngineTweaks/blob/v1.38.1/src/scripting/LuaSandbox.cpp), and the standard [LuaSQLite3 statement API](https://lua.sqlite.org/home/doc/tip/doc/lsqlite3.wiki). SQLite's [date/time functions](https://www.sqlite.org/lang_datefunc.html) document UTC `now` from the VFS clock and `%f` fractional seconds. No external code or new dependency is bundled; thanks to CET, SQLite and LuaSQLite3 contributors.

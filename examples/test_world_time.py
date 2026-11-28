@@ -1,6 +1,6 @@
 """Public clock protocol regression tests; no game or private data."""
 import unittest
-from receiver import Window, ProtocolError
+from receiver import Window, ProtocolError, timestamp
 from test_receiver import obs, menu, heartbeat
 
 def reading(n, seconds=42*86400+17*3600+35*60, **overrides):
@@ -20,6 +20,19 @@ class ClockConsumer(unittest.TestCase):
 
     def offer(self,p,n=2):
         return self.w.accept(obs("WORLD_TIME",p,n))
+
+    def test_fractional_timestamp_compatibility(self):
+        for stamp in ("2026-11-28T12:00:00Z", "2026-11-28T12:00:00.000Z",
+                      "2026-11-28T12:00:00.123Z"):
+            self.assertTrue(timestamp(stamp))
+        for stamp in ("2026-11-28T12:00:00.12Z", "2026-11-28T12:00:00.1234Z",
+                      "2026-11-28T12:00:60.123Z", "2026-11-28T12:00:00+00:00"):
+            self.assertFalse(timestamp(stamp))
+        f=obs("WORLD_TIME",reading(1),2)
+        f["timestamp"]="2026-11-28T12:00:00.123Z"
+        self.assertEqual(self.w.accept(f)["status"],"accepted")
+        self.now=2
+        self.assertNotIn("WORLD_TIME",self.w.summary()["current_fact_types"])
 
     def test_clock_and_heartbeat_do_not_extend_ttl(self):
         self.offer(reading(1))

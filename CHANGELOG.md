@@ -2,6 +2,10 @@
 
 ## v1.2.0 — 2026-11-28 (development candidate, not a release)
 
+- Optional fractional UTC source timestamps for renewed BASE and WORLD_TIME;
+  use CET's existing SQLite VFS clock before the native read, default off,
+  conservative fallback to whole seconds. No cadence, TTL, budget or wire
+  shape change; no physical latency-reduction claim.
 - Optional WORLD_TIME 0.1: fresh world-clock hour/minute, native day,
   absolute seconds when available, independent optional playthrough
   counter; explicit unavailability and signed time changes.

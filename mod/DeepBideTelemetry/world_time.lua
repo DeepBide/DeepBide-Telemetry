@@ -52,7 +52,7 @@ function M.read()
   return p
 end
 
-function M.new(offer, read)
+function M.new(offer, read, sourceClock)
   local self = {}
   read = read or M.read
   local seq, elapsed, previous, reason, unavailable, skipAge
@@ -61,11 +61,11 @@ function M.new(offer, read)
   end
   self:reset()
 
-  local function send(p)
+  local function send(p, observedAt)
     if seq >= MAX then return false end -- no wrap or re-use
     seq = seq + 1
     p.contract_version, p.sample_seq = "0.1", seq
-    return offer(p) == true
+    return offer(p, observedAt) == true
   end
 
   function self:invalidate(why)
@@ -107,6 +107,7 @@ function M.new(offer, read)
     if elapsed < INTERVAL then return end
     local interval = elapsed
     elapsed = 0
+    local observedAt = sourceClock and sourceClock() or nil
     local ok, p = pcall(read)
     if not ok or type(p) ~= "table" then
       self:invalidate("read_error")
@@ -126,7 +127,7 @@ function M.new(offer, read)
       p.clock_change = delta < 0 and "BACKWARD" or delta == 0 and "UNCHANGED"
         or delta >= LARGE_STEP and "LARGE_FORWARD" or "FORWARD"
     end
-    if send(p) then
+    if send(p, observedAt) then
       previous, reason, unavailable, skipAge = p, nil, nil, nil
     else
       previous, reason, skipAge = nil, "AFTER_READ_GAP", nil
