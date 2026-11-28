@@ -1,5 +1,20 @@
 # DeepBide-Telemetry changelog
 
+## v1.2.0 — 2026-11-28 (development candidate, not a release)
+
+- Optional WORLD_TIME 0.1: fresh world-clock hour/minute, native day,
+  absolute seconds when available, independent optional playthrough
+  counter; explicit unavailability and signed time changes.
+- Bounded nominal one-second polling; reuse existing UI/game/transport
+  readiness and reset boundaries. No setters or save access.
+- Optional UI time-skip finish callback witness, no claimed sleep
+  causality or unique save-reload identity. Existing 1.1.0 candidate
+  and its runtime qualification evidence remain unchanged.
+- Extend reference receiver with bounded validation, sequence,
+  arithmetic, menu/loading revocation and 2 s maximum clock TTL.
+  Old receivers need explicit admission before the producer flag is
+  enabled. Offline tests only; no new ingame or performance claim.
+
 ## v1.1.0 — 2026-11-27
 
 - Add optional `context_renewal_0_1` for genuine current menu, combat, quest

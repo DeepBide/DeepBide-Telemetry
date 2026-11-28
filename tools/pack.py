@@ -16,12 +16,12 @@ import zipfile
 SOURCE_PREFIX = "mod/DeepBideTelemetry/"
 MOD_PREFIX = "bin/x64/plugins/cyber_engine_tweaks/mods/DeepBideTelemetry/"
 RUNTIME_NAMES = ("init.lua", "config.example.json", "native_candidate_25.lua",
-                 "native_equipment_25.lua", "native_stash_25.lua")
+                 "native_equipment_25.lua", "native_stash_25.lua", "world_time.lua")
 COMMON_NAMES = ("README.md", "LICENSE", "PROTOCOL.md", "THIRD_PARTY.md", "CHANGELOG.md")
 SOURCE_EXTRAS = (".gitignore", ".gitattributes", "examples/receiver.py",
                  "examples/test_receiver.py", "tools/pack.py",
                  "examples/expanded_contract.py", "examples/expanded_reader.py", "examples/test_expanded_reader.py",
-                 "examples/cet_follow.py", "examples/test_cet_follow.py")
+                 "examples/cet_follow.py", "examples/test_cet_follow.py", "examples/test_world_time.py")
 MANIFEST = "release-manifest.json"
 
 
@@ -56,17 +56,20 @@ def manifest(files):
         raise ValueError("PACKAGE_ALLOWLIST_MISMATCH")
     hashes = {n: sha(canonical(raw)) for n, raw in sorted(files.items())}
     runtime = {n: hashes[prefix+n] for n in RUNTIME_NAMES}
-    return {"product": "DeepBide-Telemetry", "version": "1.1.0",
-            "scope": "PUBLIC_STABLE_SCOPED", "license": "MIT",
+    return {"product": "DeepBide-Telemetry", "version": "1.2.0",
+            "scope": "PUBLIC_DEVELOPMENT_CANDIDATE", "license": "MIT",
             "license_scope": "ORIGINAL_DEEPBIDETELEMETRY_CODE_AND_DOCUMENTATION",
             "provenance_review": "SCOPED_SOURCE_HISTORY_REVIEW",
-            "qualification": "V1_0_0_PHYSICAL_REUSED_RENEWAL_ROTATION_FOLLOW_BUDGET_FENCE_OFFLINE_PASS_SCOPED",
-            "physical_revision": "V1_0_0_2026_11_26_INIT_AND_NATIVE_CANDIDATE_CHANGED_EQUIPMENT_STASH_IDENTICAL",
+            "qualification": "WORLD_TIME_OFFLINE_PASS_SCOPED_PARENT_EVIDENCE_RETAINED",
+            "physical_revision": "V1_1_0_BUDGET_FENCE_CP_M1_SCOPED_WORLD_TIME_NOT_PHYSICALLY_VERIFIED",
             "context_renewal_contract": {"version": "0.1", "config_key": "context_renewal_0_1",
                                          "default": False, "profile": "expanded",
                                          "nominal_poll_seconds": 0.5},
             "native_budget_fence_contract": {"version": "0.1", "config_key": "native_budget_fence_0_1",
                                              "default": False, "scope": "BASE_ONLY_POST_BUDGET_BARRIER"},
+            "world_time_contract": {"version": "0.1", "config_key": "world_time_0_1",
+                                    "default": False, "nominal_sample_seconds": 1.0,
+                                    "physical_qualification": "NOT_VERIFIED"},
             "cet_follow_contract": {"version": "0.1", "opt_in": True,
                                     "distribution": "SOURCE_ARCHIVE_ONLY",
                                     "current_producer_attested": False},
@@ -83,7 +86,7 @@ def archive(files):
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_STORED) as z:
         for name, raw in sorted(all_files.items()):
-            entry = zipfile.ZipInfo(name, (2026, 11, 27, 0, 0, 0))
+            entry = zipfile.ZipInfo(name, (2026, 11, 28, 0, 0, 0))
             entry.create_system = 3
             entry.external_attr = 0o100644 << 16
             z.writestr(entry, raw)

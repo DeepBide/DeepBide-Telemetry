@@ -236,6 +236,90 @@ opt in deliberately and test it. The original source-only follower
 retains ordinary rotation and integrity limits. No capture or gameplay
 data is uploaded by these tools.
 
+## Optional world clock contract 0.1 (development candidate)
+
+`world_time_0_1` defaults to false. It requires the enabled CP2.5
+producer, schema 0.03 and the existing nominal 0.5 s poll. It is independent
+of the expanded native budget, works in both baseline and expanded
+profiles, and does not change the four-signal BASE recovery fence.
+**Old TCP consumers do not admit WORLD_TIME.** Enable only with a
+compatible reviewed consumer; the default preserves the prior producer
+behavior. The new reference receiver admits the optional type.
+
+The source reads one current `Game.GetTimeSystem():GetGameTime()` value.
+`GameTime.GetSeconds`, `Hours`, `Minutes` and `Days` are candidate native
+APIs; checked components must agree with the scalar when both exist.
+If seconds are unavailable, a valid hour/minute pair is sufficient.
+The independent optional `EngineTime.ToFloat(Game.GetPlaythroughTime())`
+counter is retained separately. None of these API candidates has been
+physically verified on the exact CP2.5 build by this change.
+
+One genuine positive reading per nominal one second of existing poll
+time, first eligible reading immediately, no catch-up bursts. No clock
+reads in menu, load, detached/unverified world or disconnected producer.
+Unavailability emits a bounded negative row on reason changes and
+revokes the current clock. It never modifies a game clock or save.
+
+Example payload (synthetic, not a captured player record):
+
+```json
+{"contract_version":"0.1","sample_seq":1,"availability":"OBSERVED","day":42,"hour":17,"minute":35,"minute_of_day":1055,"second":0,"world_seconds":3692100,"precision":"SECOND","playthrough_seconds":7200,"continuity":"INITIAL","clock_change":"NO_COMPARISON","skip_finish_callback_seen":false}
+```
+
+- `hour` 0..23, `minute` 0..59, `minute_of_day=hour*60+minute`.
+- Optional `day` is the native day index, not a real date or days played
+  since the start of the human's campaign. Zero is valid. When the
+  native total is available, `world_seconds=day*86400+minute_of_day*60+second`
+  (second 0..59), precision SECOND. Otherwise precision MINUTE;
+  `second` and `world_seconds` are absent, day may also be absent.
+  The total is the absolute world/story clock, including any initial
+  offset and jumps. It is NOT elapsed real playtime.
+- Optional `playthrough_seconds` is the distinct engine playthrough
+  counter, represented to millisecond resolution; its persistence and
+  pause/load/sleep semantics require physical qualification. Omission
+  is unavailability, not zero. The numeric range of counters in this
+  contract is 0..2147483647.
+- `sample_seq` increases for every WORLD_TIME offer in the existing
+  TCP session, with no wrap/reuse. It resets only for a new TCP epoch.
+  Current positives require an independently verified world/UI state.
+- `continuity`: INITIAL, ADJACENT, AFTER_MENU, AFTER_WORLD_BOUNDARY,
+  AFTER_READ_GAP, AFTER_POLL_GAP. ADJACENT means adjacent sampled
+  readings, not proof of uninterrupted natural time. A poll interval
+  over 2.5 s is marked AFTER_POLL_GAP; menu resumes are explicitly
+  noncontinuous. Loading/tracker detach/read failure discard the old
+  comparison; never accumulate through another loaded world or epoch.
+- `delta_world_seconds` is an optional signed difference of consecutive
+  observed absolute clocks in the same eligible comparison scope.
+  Midnight with a valid day transition is ordinary forward motion.
+  `clock_change`: NO_COMPARISON, UNCHANGED, FORWARD, BACKWARD,
+  LARGE_FORWARD (delta >= 300 seconds). This is a size threshold,
+  not proof of normal progression, sleep, time dilation, scripted
+  waiting or reload. A backward jump alone is not a reload witness.
+- `skip_finish_callback_seen` records receipt of the optional
+  `gameuiInGameMenuGameController.OnTimeSkipFinishEvent` observer
+  between readings, with a bounded ten-second update-time witness
+  lifetime. It does not establish exclusive causation, duration or
+  completeness. False does not prove no skip occurred. The observer
+  is independently fallible; it has no control side effects. No
+  universal sleep-completion witness has been qualified, and no
+  sleep attribution is invented. Loading and tracker detach are
+  observed lifecycle boundaries, not a unique save-reload identity.
+- A negative row is exactly contract_version, sample_seq,
+  availability=UNAVAILABLE and reason=menu/loading/session_boundary/
+  read_error. It is not a positive fact. No old world clock survives it.
+
+The reference receiver validates structure, ranges, arithmetic,
+session/sequence and raw delta consistency, revokes WORLD_TIME on menu,
+loading, explicit unavailability or close, and expires clock facts
+after at most two seconds of receipt time. Heartbeat never refreshes a
+clock. A production consumer additionally needs exact producer/config
+admission, peer identity, receiver order, source freshness, current
+lifecycle and backlog checks; no inference from UTC or wall-clock
+conversion. Match the active objective's time window (including
+midnight), not a stale or different quest. Time within a documented
+window is not evidence that a door is actually open or a quest can
+currently advance.
+
 ## Expanded profile: supported local observation stream (not TCP)
 
 Both profiles were physically tested on the documented runtime pairing. Expanded is opt-in; see README for scope, evidence and configuration.

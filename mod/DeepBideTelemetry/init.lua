@@ -43,6 +43,7 @@ local loadingRecoveryTracker = false
 local loadingRecoverySamples = 0
 local loadingProgressUnknown = false
 local nativeCandidate25 = nil
+local worldClock = nil
 -- Opt-in renewal of four genuine current reads; never refresh cached facts.
 local candidateBaseRenewDue = false
 local candidateBaseWasGameplay = false
@@ -164,6 +165,13 @@ local function loadConfig()
       or decoded.context_renewal_0_1 ~= true or decoded.native_candidate_profile ~= "expanded"
       or (decoded.poll_interval_seconds or 0.5) ~= 0.5) then
     error("native budget fence requires expanded current-context renewal")
+  end
+  if decoded.world_time_0_1 ~= nil and type(decoded.world_time_0_1) ~= "boolean" then
+    error("invalid boolean config field: world_time_0_1")
+  end
+  if decoded.world_time_0_1 == true and (decoded.native_candidate_25 ~= true
+      or decoded.schema_version ~= "0.03" or (decoded.poll_interval_seconds or 0.5) ~= 0.5) then
+    error("world time requires CP2.5 producer and 0.5 second polling")
   end
   if decoded.journal_verification_0_1 == true and decoded.schema_version ~= "0.03" then
     error("journal verification requires schema 0.03")
@@ -394,6 +402,7 @@ local function beginProducerSession()
   worldContextOffered = false
   clearPendingAcks()
   sessionId = newUuid()
+  if worldClock then worldClock:reset() end
   journalBaseline = { ACTIVE_OBJECTIVE = true, ACTIVE_QUEST = true }
   journalElapsed = JOURNAL_RENEW_SECONDS
   targetBaselinePending = true
@@ -405,6 +414,8 @@ end
 -- ambiguous and the current wire cannot express it, retire the TCP epoch.
 -- Consumers must revoke/expire facts on these boundaries, not infer absence.
 local function revokeWorldContext(reason, terminal, transportBoundary)
+  if worldClock and connected then worldClock:invalidate(reason == "loading" and "loading"
+    or reason == "session_boundary" and "session_boundary" or "read_error") end
   if not worldContextOffered then return end
   worldContextOffered = false
   for kind in pairs(lastValues) do
@@ -566,6 +577,7 @@ local function registerMenuObservers()
       targetRenewElapsed = 0.0
     end
     if enteringLoading then
+      if worldClock and connected then worldClock:invalidate("loading") end
       journalLoadingRecoveryAllowed = false
       suspendNativeCandidate25("LOADING")
     end
@@ -630,6 +642,7 @@ local function registerInventoryLifecycleObservers()
       invalidateJournal("session_boundary", true)
     end
     gameSessionReady = false
+    if worldClock and connected then worldClock:invalidate("session_boundary") end
     loadingRecoveryTracker = false
     loadingRecoverySamples = 0
     lastValues["MENU_STATE"] = nil
@@ -1782,6 +1795,7 @@ local function pollTelemetry(candidateDelta)
   observeJournal(player, worldReady)
   observeCombat(player)
   candidateBaseRenewDue = false
+  if worldClock and connected then worldClock:tick(candidateDelta, isMenu == false) end
   observeWeapon(player)
   observeLife(player)
   observeVehicle(player)
@@ -1848,6 +1862,7 @@ local function disconnectOwnedSocket()
   releaseOwnedSocket()
   if nativeCandidate25 then pcall(function() nativeCandidate25:shutdown() end) end
   nativeCandidate25 = nil
+  worldClock = nil
   redSocketApi = nil
 end
 
@@ -1980,6 +1995,25 @@ registerForEvent("onInit", function()
       error("DeepBide-RedSocket 0.5.2-rc.3 CET API required")
     end
 
+    if config.world_time_0_1 == true then
+      local clockOK, clockModule = pcall(require, "world_time")
+      if not clockOK or type(clockModule) ~= "table" or type(clockModule.new) ~= "function" then
+        error("world clock module unavailable")
+      end
+      worldClock = clockModule.new(function(payload)
+        return sendObservation("WORLD_TIME", payload,
+          "Game.GetTimeSystem:GetGameTime;GameTime.GetSeconds/Hours/Minutes/Days;optional Game.GetPlaythroughTime/EngineTime.ToFloat", false)
+      end)
+      -- Optional candidate witness: only a received callback is evidence.
+      -- A missing/changed method cannot prevent the ordinary clock reader.
+      local hookOK = pcall(function()
+        ObserveAfter("gameuiInGameMenuGameController", "OnTimeSkipFinishEvent", function()
+          if connected and gameSessionReady and worldClock and not menuContext.is_loading
+              and not loadingProgressUnknown then worldClock:note_skip_finish() end
+        end)
+      end)
+      if not hookOK then reportOnce("world-time-skip-hook", "optional time skip witness unavailable") end
+    end
     registerMenuObservers()
     registerInventoryLifecycleObservers()
     initializeNativeCandidate25()
